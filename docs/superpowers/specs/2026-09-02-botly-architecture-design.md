@@ -79,7 +79,8 @@ botly is a **greenfield repository that ports selectively** from `~/Documents/ai
   OCR normalization). Its own docstring already describes it as the locked ingress schema
   that every modality normalizes to; that is exactly botly's message envelope.
 - The tool registry shape, and the `/tools` capability-metadata-only exposure pattern.
-- RAG retrieval over Qdrant, together with its scope-evidence test approach.
+- RAG retrieval logic and its scope-evidence test approach. The retrieval *interface* and
+  tests port as-is; the storage backend changes from Qdrant to pgvector (see below).
 - Celery task patterns and the `failed_job` model.
 - Observability wiring (Langfuse / Grafana / Tempo).
 - The `ENVIRONMENT=production` startup gating, where unsupported aliases fail hard so
@@ -103,9 +104,50 @@ white-labelling.
 
 ### House conventions carried over
 
-FastAPI + SQLModel + Alembic + MySQL + Redis + Celery + Qdrant + LangGraph, Docker Compose,
-pytest. Every external service sits behind a Protocol with a fake, following the `adapters/`
-discipline in the Kira project.
+FastAPI + SQLModel + Alembic + Redis + Celery + LangGraph, Docker Compose, pytest. Every
+external service sits behind a Protocol with a fake, following the `adapters/` discipline in
+the Kira project.
+
+### Datastore: PostgreSQL 17 + pgvector, not MySQL + Qdrant (decided 2026-09-03)
+
+This is a deliberate deviation from the MySQL used in the other house projects. Three
+reasons, in order of weight:
+
+1. **`jsonb`.** Ingress persists raw webhook payloads before ACK, the capability manifest is
+   per-channel, and every conversation and message carries channel-specific metadata. That is
+   a JSON-shaped schema across six providers with different envelopes. Postgres indexes it
+   with GIN directly; MySQL requires a generated stored column per path, so querying into a
+   payload field not anticipated at design time becomes a migration.
+2. **Tenant-scoped RAG without a second source of truth.** Retrieval must be filtered by
+   tenant. With a separate vector store, the tenant boundary is duplicated in a system that
+   is only eventually consistent with the database: delete a KB document, fail the vector
+   delete, and live vectors survive for a tenant that no longer owns them — cross-tenant
+   leakage as a sync bug. With pgvector the chunk row and its embedding are the same row,
+   deleted in the same transaction, and the filter is a plain indexed `WHERE`. One backup,
+   one Alembic history, one restore path.
+3. **`SELECT … FOR UPDATE SKIP LOCKED`** is first-class, which gives the outbound dispatcher
+   race-free lease semantics and keeps a credible fallback if Celery is ever dropped.
+
+Scale supports it: per-tenant knowledge bases are thousands to low tens of thousands of
+chunks, well inside HNSW's comfortable range in pgvector.
+
+**What this costs, recorded so it is not rediscovered later:**
+
+- *Filtered recall.* Selective filters combined with HNSW historically over- or under-fetched.
+  pgvector 0.8 iterative index scans largely fix this, but recall must be measured on real
+  tenant data rather than assumed from the default `hnsw.ef_search`.
+- *No built-in hybrid search.* Qdrant ships sparse+dense fusion; here it is `tsvector`
+  alongside the embedding, fused with RRF in our own SQL. This is required, not optional —
+  seller knowledge bases are full of SKUs and order IDs where lexical match beats semantic.
+- *Shared resources.* Vector scans compete with OLTP for buffer cache and connections. If it
+  bites, embeddings move to a second Postgres instance or a read replica; that is a
+  connection-string change, not a code change.
+
+Retrieval stays behind a Protocol with a fake, per the `adapters/` discipline, so Qdrant
+remains a one-file swap if we outgrow pgvector.
+
+**Redis stays.** Dedupe keys and the outbound token bucket are sub-millisecond, high-churn,
+disposable state; putting them in Postgres would only generate WAL and vacuum pressure.
 
 ---
 
@@ -183,8 +225,13 @@ serve several channels of the same shop.
 `Conversation.handoff_state` is the pivotal v1 field:
 `bot | pending_human | human | resolved`, alongside `bot_muted_until`.
 
-Supporting tables: `inbound_event` (raw payload plus dedupe key), `failed_job`,
+Supporting tables: `inbound_event` (raw payload as `jsonb`, plus dedupe key), `failed_job`,
 `message_template` (per-connection, tracking provider approval status).
+
+Knowledge base: `kb_document` (bot_id, source, status) → `kb_chunk` (document_id, bot_id,
+text, `embedding vector`, `tsv tsvector`). `bot_id` is denormalized onto the chunk so tenant
+filtering is a single indexed predicate on the same row as the vector, and a document delete
+cascades to its embeddings in one transaction.
 
 ---
 
@@ -292,6 +339,8 @@ Shopee Open Platform client that refreshes per-shop tokens automatically.
 - **Capability tests:** the dispatcher must refuse illegal sends, such as free-form text
   outside the WhatsApp window.
 - Golden tests for the brain, plus the RAG scope-evidence approach carried over from AICS.
+- **Retrieval tests:** a labelled fixture set measuring recall@k for vector-only vs. hybrid
+  RRF, and a cross-tenant test asserting that a chunk is never retrievable by another bot.
 - No live network access in tests.
 
 ---
@@ -321,3 +370,5 @@ Shopee Open Platform client that refreshes per-shop tokens automatically.
 | WhatsApp Business verification refused | The primary v1 channel is lost | Apply on day 1; Telegram carries the demo meanwhile; a BSP (Twilio, 360dialog) is the fallback route |
 | WhatsApp per-conversation cost exceeds seller willingness to pay | Unit economics fail | Model the cost before pricing; consider passing it through per-conversation rather than absorbing it |
 | RedNote never opens a legitimate API | A marketed channel cannot ship | Do not market it until it exists; never substitute browser automation |
+| pgvector filtered recall is worse than assumed under tenant filters | RAG silently returns the wrong context, so the bot answers confidently from nothing | Measure recall@k on real tenant data before launch, not after; tune `hnsw.ef_search` and rely on pgvector 0.8 iterative scans |
+| Vector scans contend with OLTP for buffer cache and connections | Inbound ACK latency drifts past the <100ms budget | Watch ACK p99 against embedding volume; move embeddings to a replica or a second instance — a connection-string change behind the retrieval Protocol |
