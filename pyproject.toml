@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "botly"
+version = "0.1.0"
+description = "Multi-channel chatbot platform for Southeast Asian commerce sellers"
+authors = []
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+sqlmodel = "*"
+sqlalchemy = {extras = ["asyncio"], version = "*"}
+asyncpg = "*"
+alembic = "*"
+pgvector = "*"
+redis = {extras = ["hiredis"], version = "*"}
+celery = {extras = ["redis"], version = "*"}
+pydantic = "^2"
+pydantic-settings = "*"
+cryptography = "*"
+httpx = "*"
+greenlet = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-asyncio = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
