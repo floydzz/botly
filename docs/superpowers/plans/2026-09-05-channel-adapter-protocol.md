@@ -45,7 +45,7 @@
 - Consumes: nothing (this is the base of the feature)
 - Produces: `Attachment(kind, url, mime_type=None, size_bytes=None)`; `ChannelCapabilities(supports_media, max_text_len, session_window=None, requires_template_outside_window=False, supports_typing_indicator=False)`; `InboundEnvelope(provider, external_thread_id, provider_update_id, sender_ref, sent_at, provider_message_id=None, text=None, attachments=(), raw={})`; `OutboundMessage(text=None, attachments=(), template_name=None, template_variables={})`; `SendResult(ok, provider_message_id=None, error=None, retryable=False)`
 
-- [ ] **Step 1: Create the package marker**
+- [x] **Step 1: Create the package marker**
 
 ```bash
 mkdir -p app/channels
@@ -55,7 +55,7 @@ EOF
 
 Leave it empty for now; Task 2 fills in the exports once the Protocol exists.
 
-- [ ] **Step 2: Write the failing test — `test/test_channel_types.py`**
+- [x] **Step 2: Write the failing test — `test/test_channel_types.py`**
 
 ```python
 from datetime import datetime, timedelta, timezone
@@ -178,12 +178,12 @@ class TestSendResult:
             SendResult(ok=True, retryable=True)
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `poetry run pytest test/test_channel_types.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.channels.types'`
 
-- [ ] **Step 4: Write `app/channels/types.py`**
+- [x] **Step 4: Write `app/channels/types.py`**
 
 ```python
 from datetime import datetime, timedelta
@@ -315,12 +315,12 @@ class SendResult(BaseModel):
         return self
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `poetry run pytest test/test_channel_types.py -q`
 Expected: PASS, 15 tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/channels/__init__.py app/channels/types.py test/test_channel_types.py
@@ -340,7 +340,7 @@ git commit -m "feat: channel capability manifest and message envelopes"
 - Consumes: every type from Task 1
 - Produces: `ChannelAdapter` Protocol with `provider: ClassVar[str]`, `capabilities: ClassVar[ChannelCapabilities]`, and five members — `verify_webhook(headers, raw_body) -> bool`, `parse_inbound(payload) -> list[InboundEnvelope]`, `async send(conn, out) -> SendResult`, `async connect(conn) -> None`, `async disconnect(conn) -> None`
 
-- [ ] **Step 1: Write the failing test — `test/test_channel_protocol.py`**
+- [x] **Step 1: Write the failing test — `test/test_channel_protocol.py`**
 
 > **Note for the implementer:** `runtime_checkable` protocols in Python 3.12
 > check *non-method* members too. `ChannelAdapter.__protocol_attrs__` is
@@ -389,12 +389,12 @@ def test_the_protocol_is_exported_from_the_package_root():
     assert "ChannelAdapter" in channels.__all__
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `poetry run pytest test/test_channel_protocol.py -q`
 Expected: FAIL — `ImportError: cannot import name 'ChannelAdapter'`
 
-- [ ] **Step 3: Write `app/channels/base.py`**
+- [x] **Step 3: Write `app/channels/base.py`**
 
 ```python
 from collections.abc import Mapping
@@ -460,7 +460,7 @@ class ChannelAdapter(Protocol):
         ...
 ```
 
-- [ ] **Step 4: Write `app/channels/__init__.py`**
+- [x] **Step 4: Write `app/channels/__init__.py`**
 
 ```python
 """Channel adapters.
@@ -489,12 +489,12 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `poetry run pytest test/test_channel_protocol.py -q`
 Expected: PASS, 5 tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/channels/base.py app/channels/__init__.py test/test_channel_protocol.py
@@ -513,7 +513,7 @@ git commit -m "feat: ChannelAdapter protocol"
 - Consumes: `ChannelAdapter`, all Task 1 types, `ChannelConnection`
 - Produces: `FakeAdapter(secret=b"fake-secret")` with `provider == "fake"`, public attributes `sent: list[tuple[int | None, OutboundMessage]]`, `connected: set[int | None]`, `fail_next_send: str | None`, and helper `sign(raw_body: bytes) -> str`; module constant `SIGNATURE_HEADER = "x-fake-signature"`
 
-- [ ] **Step 1: Write the failing test — `test/test_fake_adapter.py`**
+- [x] **Step 1: Write the failing test — `test/test_fake_adapter.py`**
 
 ```python
 import pytest
@@ -615,12 +615,12 @@ async def test_connect_and_disconnect_are_idempotent():
     assert a.connected == set()
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `poetry run pytest test/test_fake_adapter.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.channels.fake'`
 
-- [ ] **Step 3: Write `app/channels/fake/adapter.py`**
+- [x] **Step 3: Write `app/channels/fake/adapter.py`**
 
 ```python
 import hashlib
@@ -717,7 +717,7 @@ class FakeAdapter:
         self.connected.discard(conn.id)
 ```
 
-- [ ] **Step 4: Write `app/channels/fake/__init__.py`**
+- [x] **Step 4: Write `app/channels/fake/__init__.py`**
 
 ```python
 from app.channels.fake.adapter import SIGNATURE_HEADER, FakeAdapter
@@ -725,12 +725,12 @@ from app.channels.fake.adapter import SIGNATURE_HEADER, FakeAdapter
 __all__ = ["SIGNATURE_HEADER", "FakeAdapter"]
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `poetry run pytest test/test_fake_adapter.py -q`
 Expected: PASS, 10 tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/channels/fake test/test_fake_adapter.py
@@ -751,7 +751,7 @@ git commit -m "feat: in-memory fake channel adapter"
 
 > `test/conformance.py` does not match pytest's `test_*.py` collection pattern, so pytest never runs it on its own. The class name deliberately lacks a `Test` prefix for the same reason. A subclass named `TestXConformance` in a `test_*.py` file inherits and runs every check.
 
-- [ ] **Step 1: Write `test/conformance.py`**
+- [x] **Step 1: Write `test/conformance.py`**
 
 ```python
 """The contract every ChannelAdapter must satisfy.
@@ -895,7 +895,7 @@ class ChannelAdapterConformance:
         await adapter.disconnect(conn)
 ```
 
-- [ ] **Step 2: Append the subclass to `test/test_fake_adapter.py`**
+- [x] **Step 2: Append the subclass to `test/test_fake_adapter.py`**
 
 ```python
 from test.conformance import ChannelAdapterConformance
@@ -917,12 +917,12 @@ class TestFakeAdapterConformance(ChannelAdapterConformance):
         return _payload()
 ```
 
-- [ ] **Step 3: Run the suite to verify it passes**
+- [x] **Step 3: Run the suite to verify it passes**
 
 Run: `poetry run pytest test/test_fake_adapter.py -v`
 Expected: PASS — the 10 fake-specific tests plus 17 inherited conformance tests
 
-- [ ] **Step 4: Prove the suite has teeth**
+- [x] **Step 4: Prove the suite has teeth**
 
 The suite is worthless if it passes against a broken adapter. Verify it fails, then undo.
 
@@ -944,12 +944,12 @@ poetry run pytest test/test_fake_adapter.py -q
 
 Expected: PASS again.
 
-- [ ] **Step 5: Run the whole suite**
+- [x] **Step 5: Run the whole suite**
 
 Run: `poetry run pytest -q`
 Expected: PASS — the 21 pre-existing tests plus everything added here
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add test/conformance.py test/test_fake_adapter.py
@@ -971,7 +971,7 @@ git commit -m "test: shared ChannelAdapter conformance suite"
 > forget is better than a rule everybody remembers, and this one has to survive
 > five more channels.
 
-- [ ] **Step 1: Write the test — `test/test_architecture.py`**
+- [x] **Step 1: Write the test — `test/test_architecture.py`**
 
 ```python
 import ast
@@ -1055,17 +1055,17 @@ def test_the_guard_would_catch_a_violation():
     assert found == ["telegram"]
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `poetry run pytest test/test_architecture.py -q`
 Expected: PASS, 2 tests. `app/models/` mentions providers only in comments and docstrings, both of which are exempt.
 
-- [ ] **Step 3: Run the whole suite**
+- [x] **Step 3: Run the whole suite**
 
 Run: `poetry run pytest -q`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add test/test_architecture.py
