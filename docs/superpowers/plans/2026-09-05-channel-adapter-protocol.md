@@ -342,12 +342,21 @@ git commit -m "feat: channel capability manifest and message envelopes"
 
 - [ ] **Step 1: Write the failing test — `test/test_channel_protocol.py`**
 
+> **Note for the implementer:** `runtime_checkable` protocols in Python 3.12
+> check *non-method* members too. `ChannelAdapter.__protocol_attrs__` is
+> `{provider, capabilities, verify_webhook, parse_inbound, send, connect,
+> disconnect}`, so a test double must declare `capabilities` or `isinstance`
+> returns False for a reason that has nothing to do with its methods.
+
 ```python
-from app.channels import ChannelAdapter
+from app.channels import ChannelAdapter, ChannelCapabilities
+
+_CAPS = ChannelCapabilities(supports_media=False, max_text_len=100)
 
 
 class _Complete:
     provider = "complete"
+    capabilities = _CAPS
 
     def verify_webhook(self, headers, raw_body): ...
     def parse_inbound(self, payload): ...
@@ -358,6 +367,7 @@ class _Complete:
 
 class _MissingDisconnect:
     provider = "partial"
+    capabilities = _CAPS
 
     def verify_webhook(self, headers, raw_body): ...
     def parse_inbound(self, payload): ...
@@ -482,7 +492,7 @@ __all__ = [
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `poetry run pytest test/test_channel_protocol.py -q`
-Expected: PASS, 3 tests
+Expected: PASS, 5 tests
 
 - [ ] **Step 6: Commit**
 
