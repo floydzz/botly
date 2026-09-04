@@ -93,3 +93,22 @@ async def test_connect_and_disconnect_are_idempotent():
     await a.disconnect(conn)
     await a.disconnect(conn)
     assert a.connected == set()
+
+
+from test.conformance import ChannelAdapterConformance  # noqa: E402
+
+
+class TestFakeAdapterConformance(ChannelAdapterConformance):
+    def make_adapter(self):
+        return FakeAdapter()
+
+    def make_connection(self):
+        return _conn()
+
+    def make_signed_webhook(self):
+        adapter = FakeAdapter()
+        body = b'{"updates":[]}'
+        return {SIGNATURE_HEADER: adapter.sign(body)}, body
+
+    def make_inbound_payload(self):
+        return _payload()
