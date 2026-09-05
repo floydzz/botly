@@ -9,6 +9,7 @@ from sqlmodel import SQLModel
 
 import app.models  # noqa: F401  -- registers every table on SQLModel.metadata
 from app.core.config import settings
+from app.models.base import EnumString
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
@@ -19,6 +20,20 @@ if config.config_file_name is not None:
 target_metadata = SQLModel.metadata
 
 
+def _render_item(type_, obj, autogen_context):
+    """Render our TypeDecorators as the plain types they actually are.
+
+    A migration describes the database, not the Python layer in front of it.
+    EnumString is a VARCHAR with an Enum on the Python side, so emitting
+    ``app.models.base.EnumString(length=32)`` both requires an import alembic
+    does not write and pins the migration to a class that may move. The DDL is
+    identical either way.
+    """
+    if type_ == "type" and isinstance(obj, EnumString):
+        return f"sa.String(length={obj.length})"
+    return False
+
+
 def _run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
@@ -27,6 +42,7 @@ def _run_migrations(connection: Connection) -> None:
         # schema silently drifts from the models.
         compare_type=True,
         compare_server_default=True,
+        render_item=_render_item,
     )
     with context.begin_transaction():
         context.run_migrations()
