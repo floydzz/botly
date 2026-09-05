@@ -3242,7 +3242,7 @@ git commit -m "feat: capability-driven outbound dispatcher with retry and rate l
 - Consumes: 前面全部
 - Produces: `async def run_inbound_pipeline(event_id: int, session_factory=None, brain: Brain | None = None, limiter: RateLimiter | None = None) -> None`
 
-- [ ] **Step 1: 写 `app/runtime/pipeline.py`**
+- [x] **Step 1: 写 `app/runtime/pipeline.py`**
 
 ```python
 """Event to reply.
@@ -3367,7 +3367,7 @@ async def _fail(db, event: InboundEvent, connection_id: int | None, error: str) 
 
 **在 `settings` 里补上 pipeline 用到的那三个键** —— Task 9 的 Step 1 已经加过 `OUTBOUND_RATE_CAPACITY`、`OUTBOUND_RATE_REFILL_PER_SECOND`、`OUTBOUND_MAX_ATTEMPTS`。确认它们在,不在就补。
 
-- [ ] **Step 2: 写端到端测试 —— `test/test_pipeline_end_to_end.py`**
+- [x] **Step 2: 写端到端测试 —— `test/test_pipeline_end_to_end.py`**
 
 ```python
 """The proof that build-order step 3 is done.
@@ -3572,7 +3572,7 @@ async def test_a_media_only_message_escalates_and_sends_nothing(db_session, wire
     assert event.status is InboundEventStatus.PROCESSED
 ```
 
-- [ ] **Step 3: 跑端到端测试**
+- [x] **Step 3: 跑端到端测试**
 
 ```bash
 .venv/bin/python -m pytest test/test_pipeline_end_to_end.py -q
@@ -3580,7 +3580,7 @@ async def test_a_media_only_message_escalates_and_sends_nothing(db_session, wire
 
 预期:5 passed。
 
-- [ ] **Step 4: 跑整个套件**
+- [x] **Step 4: 跑整个套件**
 
 ```bash
 .venv/bin/python -m pytest -q
@@ -3605,14 +3605,14 @@ async def test_a_media_only_message_escalates_and_sends_nothing(db_session, wire
 
 这一步的价值不在代码,在于它会暴露 webhook URL 必须是 https、必须公网可达这类只有真跑一次才会发现的事。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/runtime/pipeline.py test/test_pipeline_end_to_end.py
 git commit -m "feat: inbound pipeline wiring ingress to brain to dispatch"
 ```
 
-- [ ] **Step 7: 在规格里把第 3 步勾掉**
+- [x] **Step 7: 在规格里把第 3 步勾掉**
 
 在 `docs/superpowers/specs/2026-09-02-botly-architecture-design.md` 第 12 节 Build Order 里,把第 3 条改成:
 

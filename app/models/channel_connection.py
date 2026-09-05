@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 from app.core.crypto import decrypt_credentials, encrypt_credentials
-from app.models.base import SoftDeleteMixin, TimestampMixin
+from app.models.base import EnumString, SoftDeleteMixin, TimestampMixin
 
 
 class ChannelConnectionStatus(str, Enum):
@@ -55,7 +55,11 @@ class ChannelConnection(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
     )
     status: ChannelConnectionStatus = Field(
         default=ChannelConnectionStatus.DISCONNECTED,
-        sa_column=Column(String(32), nullable=False, server_default="disconnected"),
+        sa_column=Column(
+            EnumString(ChannelConnectionStatus, 32),
+            nullable=False,
+            server_default="disconnected",
+        ),
     )
 
     def set_credentials(self, payload: dict) -> None:

@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
-from app.models.base import TimestampMixin
+from app.models.base import EnumString, TimestampMixin
 
 
 class InboundEventStatus(str, Enum):
@@ -62,7 +62,10 @@ class InboundEvent(TimestampMixin, SQLModel, table=True):
     status: InboundEventStatus = Field(
         default=InboundEventStatus.PENDING,
         sa_column=Column(
-            String(16), nullable=False, server_default="pending", index=True
+            EnumString(InboundEventStatus, 16),
+            nullable=False,
+            server_default="pending",
+            index=True,
         ),
     )
     processed_at: datetime | None = Field(
