@@ -22,5 +22,5 @@ poetry run uvicorn app.main:app --reload
 
 Shopee Open Platform partner registration and WhatsApp Business verification are
 approval-gated and sit on the critical path. They are not engineering work and they
-take weeks. Start both before writing step 2 of the build order; if either is refused,
-build-order steps 5 and 6 need replanning.
+take weeks. **Neither has been started as of 2026-09-05, and the code is two build-order
+steps ahead of them.** Status and application details: `docs/approvals.md`.
