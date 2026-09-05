@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, ForeignKey, String, Text
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -32,4 +32,10 @@ class Bot(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
     enabled_tools: list[str] = Field(
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default="[]"),
+    )
+    # How many replies the bot may make to an unresolved question before the
+    # conversation goes to a person. Per bot because a bot answering delivery
+    # questions can afford more attempts than one handling complaints.
+    escalation_max_bot_turns: int = Field(
+        default=3, sa_column=Column(Integer, nullable=False, server_default="3")
     )

@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlmodel import Field, SQLModel
@@ -87,6 +88,11 @@ class Conversation(TimestampMixin, SQLModel, table=True):
             server_default="bot",
             index=True,
         ),
+    )
+    # Why it left the bot, written for the agent who picks it up. Their
+    # first minute is wasted by an unexplained handoff.
+    escalation_reason: str | None = Field(
+        default=None, sa_column=Column(Text, nullable=True)
     )
     assignee_id: int | None = Field(
         default=None,
