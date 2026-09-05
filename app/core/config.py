@@ -7,6 +7,22 @@ _VALID_ENVIRONMENTS = ("development", "staging", "test", "production")
 
 
 class Settings(BaseSettings):
+    """Every value the process needs, read from the environment.
+
+    Two kinds of setting live here and they are treated differently.
+
+    **Anything carrying a credential or naming a backing service has no
+    default.** A missing DATABASE_URL must stop the process at startup, not
+    quietly point it at a localhost that happens to be a developer's machine --
+    and a default written here is a credential in git, whatever its value. They
+    come from ``.env`` (see ``.env.example`` for the full list); the failure
+    when one is absent is a pydantic "Field required" naming the key.
+
+    **Behaviour knobs keep their defaults**, because there is nothing secret in
+    a retry count and every deployment wanting the same number should not have
+    to restate it.
+    """
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -17,22 +33,26 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     SQL_ECHO: bool = False
 
-    DATABASE_URL: str = "postgresql+asyncpg://botly:botly@localhost:5433/botly"
-    TEST_DATABASE_URL: str = (
-        "postgresql+asyncpg://botly:botly@localhost:5433/botly_test"
-    )
-    REDIS_URL: str = "redis://localhost:6380/0"
+    # --- credentials and service addresses: no defaults, see the docstring ---
 
-    CREDENTIALS_ENCRYPTION_KEY: str = ""
+    DATABASE_URL: str
+    TEST_DATABASE_URL: str
+    REDIS_URL: str
+    # Fernet key for channel_connections.credentials_encrypted. Losing it means
+    # every stored bot token is unrecoverable; rotating it means re-encrypting
+    # every row. Generate with:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    CREDENTIALS_ENCRYPTION_KEY: str
+    # Separate Redis databases from the dedupe keys: flushing a stuck queue must
+    # not also erase the dedupe keyspace and replay every recent webhook.
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+
+    # --- behaviour knobs: defaults are the intended value everywhere ---
 
     # One day. Long enough to outlive any provider's retry schedule, short
     # enough that the keyspace does not grow without bound.
     DEDUPE_TTL_SECONDS: int = 86_400
-
-    # A separate Redis database from the dedupe keys: flushing a stuck queue
-    # must not also erase the dedupe keyspace and replay every recent webhook.
-    CELERY_BROKER_URL: str = "redis://localhost:6380/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6380/2"
 
     # Per connection. Telegram's own guidance is roughly 30 messages/second
     # overall and about 1/second into a single chat; the conservative number
