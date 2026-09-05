@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # enough that the keyspace does not grow without bound.
     DEDUPE_TTL_SECONDS: int = 86_400
 
+    # A separate Redis database from the dedupe keys: flushing a stuck queue
+    # must not also erase the dedupe keyspace and replay every recent webhook.
+    CELERY_BROKER_URL: str = "redis://localhost:6380/1"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6380/2"
+
     @property
     def is_production(self) -> bool:
         """The single place that decides what "production" means."""

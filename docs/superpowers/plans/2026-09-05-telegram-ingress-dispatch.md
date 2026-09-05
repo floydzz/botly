@@ -2241,7 +2241,7 @@ git commit -m "feat: webhook ingress with dedupe, raw persistence and fast ack"
   - `CeleryInboundQueue()`
   - Celery 任务 `botly.process_inbound_event`,签名 `process_inbound_event(event_id: int)`
 
-- [ ] **Step 1: 在 config 里加 Celery 设置**
+- [x] **Step 1: 在 config 里加 Celery 设置**
 
 在 `Settings` 里 `DEDUPE_TTL_SECONDS` 下面加:
 
@@ -2252,7 +2252,7 @@ git commit -m "feat: webhook ingress with dedupe, raw persistence and fast ack"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6380/2"
 ```
 
-- [ ] **Step 2: 写会失败的测试 —— `test/test_worker_tasks.py`**
+- [x] **Step 2: 写会失败的测试 —— `test/test_worker_tasks.py`**
 
 ```python
 from app.worker.celery_app import celery_app
@@ -2302,7 +2302,7 @@ async def test_the_celery_queue_sends_the_id_to_the_named_task(monkeypatch):
     assert sent == [(INBOUND_TASK_NAME, (4321,))]
 ```
 
-- [ ] **Step 3: 跑测试确认它失败**
+- [x] **Step 3: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_worker_tasks.py -q
@@ -2310,7 +2310,7 @@ async def test_the_celery_queue_sends_the_id_to_the_named_task(monkeypatch):
 
 预期:`ModuleNotFoundError: No module named 'app.worker'`。
 
-- [ ] **Step 4: 写 `app/worker/celery_app.py`**
+- [x] **Step 4: 写 `app/worker/celery_app.py`**
 
 ```python
 from celery import Celery
@@ -2339,7 +2339,7 @@ celery_app.conf.update(
 )
 ```
 
-- [ ] **Step 5: 写 `app/worker/tasks.py`**
+- [x] **Step 5: 写 `app/worker/tasks.py`**
 
 ```python
 """Celery tasks.
@@ -2371,7 +2371,7 @@ def process_inbound_event(self, event_id: int) -> None:
     asyncio.run(run_inbound_pipeline(event_id))
 ```
 
-- [ ] **Step 6: 写 `app/worker/queue.py`**
+- [x] **Step 6: 写 `app/worker/queue.py`**
 
 ```python
 from app.worker.celery_app import celery_app
@@ -2388,7 +2388,7 @@ class CeleryInboundQueue:
 
 `app/worker/__init__.py` 留空。
 
-- [ ] **Step 7: 更新 `.env.example`**
+- [x] **Step 7: 更新 `.env.example`**
 
 ```bash
 cat > .env.example <<'ENVEOF'
@@ -2407,7 +2407,7 @@ CELERY_RESULT_BACKEND=redis://localhost:6380/2
 ENVEOF
 ```
 
-- [ ] **Step 8: 在 README 的本地启动步骤里补上 worker**
+- [x] **Step 8: 在 README 的本地启动步骤里补上 worker**
 
 在 `poetry run uvicorn app.main:app --reload` 那一行后面加一行:
 
@@ -2415,7 +2415,7 @@ ENVEOF
 poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 ```
 
-- [ ] **Step 9: 跑测试确认通过**
+- [x] **Step 9: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_worker_tasks.py -q
@@ -2423,7 +2423,7 @@ poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 
 预期:5 passed。注意这些测试不需要 broker —— 它们检查的是注册和配置,不投递任何消息。
 
-- [ ] **Step 10: 提交**
+- [x] **Step 10: 提交**
 
 ```bash
 git add app/worker/ app/core/config.py .env.example README.md test/test_worker_tasks.py

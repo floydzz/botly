@@ -16,6 +16,7 @@ docker compose exec -T postgres psql -U botly -d botly -c "CREATE DATABASE botly
 poetry run alembic upgrade head
 poetry run pytest
 poetry run uvicorn app.main:app --reload
+poetry run celery -A app.worker.celery_app.celery_app worker --loglevel=info
 ```
 
 ## Blocking external approvals
