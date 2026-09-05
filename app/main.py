@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import health, webhooks
+from app.api import auth, health, webhooks
 from app.core.config import settings
 
 
@@ -13,6 +13,7 @@ def create_app() -> FastAPI:
         docs_url=None if settings.is_production else "/docs",
         redoc_url=None,
     )
+    app.include_router(auth.router)
     app.include_router(health.router)
     app.include_router(webhooks.router)
     return app

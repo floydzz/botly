@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     # Per connection. Telegram's own guidance is roughly 30 messages/second
     # overall and about 1/second into a single chat; the conservative number
     # here is a floor that every channel can live with.
+    # Two weeks. Long enough that an agent is not re-typing a password
+    # every morning, short enough that a forgotten laptop stops mattering.
+    SESSION_TTL_SECONDS: int = 1_209_600
+
     OUTBOUND_RATE_CAPACITY: int = 20
     OUTBOUND_RATE_REFILL_PER_SECOND: float = 1.0
     OUTBOUND_MAX_ATTEMPTS: int = 3
