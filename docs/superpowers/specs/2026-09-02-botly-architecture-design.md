@@ -349,7 +349,7 @@ Shopee Open Platform client that refreshes per-shop tokens automatically.
 
 1. Skeleton, tenancy models, migrations
 2. `ChannelAdapter` Protocol, fake, and conformance suite
-3. **Telegram adapter** — no gatekeeper, so it proves the whole pipeline end to end
+3. ~~**Telegram adapter** — no gatekeeper, so it proves the whole pipeline end to end~~ ✅ 2026-09-05
 4. Conversation and message models, inbox API, WebSocket, human takeover
 5. Shopee data client and commerce tools
 6. WhatsApp adapter, with template and window handling
