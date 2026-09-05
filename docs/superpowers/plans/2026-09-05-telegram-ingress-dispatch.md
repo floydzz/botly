@@ -1027,7 +1027,7 @@ git commit -m "feat: telegram channel adapter passing the conformance suite"
 - Consumes: `TelegramAdapter`(Task 2)、`FakeAdapter`、`ChannelConnection`
 - Produces: `build_adapter(conn: ChannelConnection, webhook_url: str | None = None) -> ChannelAdapter`、`UnknownProvider(LookupError)`、`MissingCredentials(ValueError)`
 
-- [ ] **Step 1: 写会失败的测试 —— `test/test_registry.py`**
+- [x] **Step 1: 写会失败的测试 —— `test/test_registry.py`**
 
 ```python
 import pytest
@@ -1105,7 +1105,7 @@ def test_production_refuses_to_build_the_fake_adapter(monkeypatch):
         build_adapter(conn)
 ```
 
-- [ ] **Step 2: 跑测试确认它失败**
+- [x] **Step 2: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_registry.py -q
@@ -1113,7 +1113,7 @@ def test_production_refuses_to_build_the_fake_adapter(monkeypatch):
 
 预期:`ModuleNotFoundError: No module named 'app.channels.registry'`。
 
-- [ ] **Step 3: 写 `app/channels/registry.py`**
+- [x] **Step 3: 写 `app/channels/registry.py`**
 
 ```python
 """Connection to adapter. The one dispatch point on a provider name.
@@ -1193,7 +1193,7 @@ def build_adapter(
     return builder(conn, webhook_url)
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_registry.py -q
@@ -1201,7 +1201,7 @@ def build_adapter(
 
 预期:6 passed。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/channels/registry.py test/test_registry.py
