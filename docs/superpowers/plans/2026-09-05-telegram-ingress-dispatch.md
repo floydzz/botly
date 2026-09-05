@@ -97,7 +97,7 @@ Telegram 的 HTTP 细节先单独关起来,适配器才可能在没有网络的�
   - `HttpTelegramApi(api_base: str = "https://api.telegram.org", timeout: float = 10.0, client: httpx.AsyncClient | None = None)`
   - `FakeTelegramApi()` —— 属性 `calls: list[tuple[str, str, dict]]`、`responses: list[TelegramApiResponse]`(按序弹出)、`default_response: TelegramApiResponse`
 
-- [ ] **Step 1: 建包标记**
+- [x] **Step 1: 建包标记**
 
 ```bash
 mkdir -p app/channels/telegram
@@ -106,7 +106,7 @@ touch app/channels/telegram/__init__.py
 
 先留空。Task 2 写完适配器后再填导出。
 
-- [ ] **Step 2: 写会失败的测试 —— `test/test_telegram_api.py`**
+- [x] **Step 2: 写会失败的测试 —— `test/test_telegram_api.py`**
 
 ```python
 import httpx
@@ -229,7 +229,7 @@ async def test_a_failed_response_must_carry_a_description():
         TelegramApiResponse(ok=False)
 ```
 
-- [ ] **Step 3: 跑测试确认它失败**
+- [x] **Step 3: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_telegram_api.py -q
@@ -237,7 +237,7 @@ async def test_a_failed_response_must_carry_a_description():
 
 预期:`ModuleNotFoundError: No module named 'app.channels.telegram.api'`。
 
-- [ ] **Step 4: 写 `app/channels/telegram/api.py`**
+- [x] **Step 4: 写 `app/channels/telegram/api.py`**
 
 ```python
 """The HTTP half of the Telegram channel, isolated so the adapter is testable.
@@ -355,7 +355,7 @@ class FakeTelegramApi:
         return self.default_response
 ```
 
-- [ ] **Step 5: 跑测试确认通过**
+- [x] **Step 5: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_telegram_api.py -q
@@ -363,7 +363,7 @@ class FakeTelegramApi:
 
 预期:8 passed。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/channels/telegram/ test/test_telegram_api.py
