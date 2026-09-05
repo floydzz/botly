@@ -73,9 +73,28 @@ class ChannelAdapterConformance:
         headers, body = self.make_signed_webhook()
         assert self.make_adapter().verify_webhook(headers, body) is True
 
+    def body_is_authenticated(self) -> bool:
+        """True when this adapter's scheme covers the payload bytes.
+
+        An HMAC signature does; a secret token the provider merely echoes back
+        does not -- it proves who is calling, not what they said. Declaring the
+        difference is the same move as the capability manifest: channels
+        disagree, and the disagreement belongs somewhere visible.
+        """
+        return True
+
     def test_rejects_a_tampered_body(self):
+        if not self.body_is_authenticated():
+            return
         headers, body = self.make_signed_webhook()
         assert self.make_adapter().verify_webhook(headers, body + b" ") is False
+
+    def test_rejects_a_forged_credential(self):
+        """Universal, unlike the one above. Whatever the scheme proves, a
+        delivery that fails to prove it must be refused."""
+        headers, body = self.make_signed_webhook()
+        forged = {k: v + "x" for k, v in headers.items()}
+        assert self.make_adapter().verify_webhook(forged, body) is False
 
     def test_rejects_a_delivery_with_no_headers(self):
         _, body = self.make_signed_webhook()

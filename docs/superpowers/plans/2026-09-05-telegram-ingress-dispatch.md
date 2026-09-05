@@ -397,7 +397,7 @@ git commit -m "feat: telegram bot api client behind a protocol with a fake"
 
 所以解析出的 `Attachment.url` 装的是 `tg-file://<file_id>`,由适配器自己的 `resolve_file_url()` 在真正要下载时兑现。这个 scheme 只有 Telegram 适配器认识,它不泄漏到管线的任何其他地方 —— 这正是通道差异应该被关住的方式。
 
-- [ ] **Step 1: 给 conformance 套件加上 body 认证钩子 —— `test/conformance.py`**
+- [x] **Step 1: 给 conformance 套件加上 body 认证钩子 —— `test/conformance.py`**
 
 把 `test_rejects_a_tampered_body` 那一段替换成下面这三段(`test_accepts_an_authentic_delivery` 和 `test_rejects_a_delivery_with_no_headers` 保持原样,它们对两种方案都成立):
 
@@ -426,7 +426,7 @@ git commit -m "feat: telegram bot api client behind a protocol with a fake"
         assert self.make_adapter().verify_webhook(forged, body) is False
 ```
 
-- [ ] **Step 2: 确认现有的 fake 适配器仍然通过**
+- [x] **Step 2: 确认现有的 fake 适配器仍然通过**
 
 `FakeAdapter` 用的是真 HMAC,所以默认的 `body_is_authenticated() -> True` 对它成立,不需要改 `test/test_fake_adapter.py`。
 
@@ -436,7 +436,7 @@ git commit -m "feat: telegram bot api client behind a protocol with a fake"
 
 预期:全绿,并且比之前多一项(新增的 `test_rejects_a_forged_credential`)。
 
-- [ ] **Step 3: 写会失败的测试 —— `test/test_telegram_adapter.py`**
+- [x] **Step 3: 写会失败的测试 —— `test/test_telegram_adapter.py`**
 
 ```python
 from datetime import timezone
@@ -749,7 +749,7 @@ async def test_resolve_file_url_returns_none_when_the_file_is_gone():
     assert await make_adapter(api).resolve_file_url("tg-file://gone") is None
 ```
 
-- [ ] **Step 4: 跑测试确认它失败**
+- [x] **Step 4: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_telegram_adapter.py -q
@@ -757,7 +757,7 @@ async def test_resolve_file_url_returns_none_when_the_file_is_gone():
 
 预期:`ModuleNotFoundError: No module named 'app.channels.telegram.adapter'`。
 
-- [ ] **Step 5: 写 `app/channels/telegram/adapter.py`**
+- [x] **Step 5: 写 `app/channels/telegram/adapter.py`**
 
 ```python
 """The Telegram channel. The only module in the codebase that knows what a
@@ -980,7 +980,7 @@ class TelegramAdapter:
         await self._api.call(self._token, "deleteWebhook", {})
 ```
 
-- [ ] **Step 6: 填 `app/channels/telegram/__init__.py`**
+- [x] **Step 6: 填 `app/channels/telegram/__init__.py`**
 
 ```python
 """The Telegram channel."""
@@ -990,7 +990,7 @@ from app.channels.telegram.adapter import TelegramAdapter
 __all__ = ["TelegramAdapter"]
 ```
 
-- [ ] **Step 7: 跑测试确认通过**
+- [x] **Step 7: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_telegram_adapter.py -q
@@ -998,7 +998,7 @@ __all__ = ["TelegramAdapter"]
 
 预期:conformance 套件的 18 项 + Telegram 特有的 20 项全绿。
 
-- [ ] **Step 8: 跑整个套件,确认架构守卫没被触发**
+- [x] **Step 8: 跑整个套件,确认架构守卫没被触发**
 
 ```bash
 .venv/bin/python -m pytest -q
@@ -1006,7 +1006,7 @@ __all__ = ["TelegramAdapter"]
 
 预期:全绿。特别确认 `test_no_module_outside_channels_names_a_provider` 仍然通过 —— 如果它红了,说明有个 `telegram` 字面量跑到 `app/channels/` 外面去了,把它挪回适配器目录,不要去改守卫。
 
-- [ ] **Step 9: 提交**
+- [x] **Step 9: 提交**
 
 ```bash
 git add app/channels/telegram/ test/conformance.py test/test_telegram_adapter.py
