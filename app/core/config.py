@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6380/1"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6380/2"
 
+    # Per connection. Telegram's own guidance is roughly 30 messages/second
+    # overall and about 1/second into a single chat; the conservative number
+    # here is a floor that every channel can live with.
+    OUTBOUND_RATE_CAPACITY: int = 20
+    OUTBOUND_RATE_REFILL_PER_SECOND: float = 1.0
+    OUTBOUND_MAX_ATTEMPTS: int = 3
+
     @property
     def is_production(self) -> bool:
         """The single place that decides what "production" means."""

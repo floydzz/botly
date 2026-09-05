@@ -2649,7 +2649,7 @@ git commit -m "feat: brain protocol with a stub echo implementation"
 
 **窗口检查为什么要传 `last_inbound_at` 而不是自己去查:** `Conversation` 模型属于第 4 步。派发器需要知道会话窗口有没有关,而那个时间戳将来住在 `Conversation.last_inbound_at`。把它做成参数,派发器现在就能完整实现并测试窗口规则,不必等一张还不存在的表;第 4 步接上真实会话时,改的是调用方,不是派发器。
 
-- [ ] **Step 1: 在 config 里加限流设置**
+- [x] **Step 1: 在 config 里加限流设置**
 
 ```python
     # Per connection. Telegram's own guidance is roughly 30 messages/second
@@ -2660,7 +2660,7 @@ git commit -m "feat: brain protocol with a stub echo implementation"
     OUTBOUND_MAX_ATTEMPTS: int = 3
 ```
 
-- [ ] **Step 2: 写 `app/dispatch/ratelimit.py`**
+- [x] **Step 2: 写 `app/dispatch/ratelimit.py`**
 
 ```python
 """Outbound rate limiting.
@@ -2742,7 +2742,7 @@ class RedisTokenBucket:
         return bool(allowed)
 ```
 
-- [ ] **Step 3: 写会失败的测试 —— `test/test_dispatcher.py`**
+- [x] **Step 3: 写会失败的测试 —— `test/test_dispatcher.py`**
 
 ```python
 from datetime import datetime, timedelta, timezone
@@ -3037,7 +3037,7 @@ async def test_a_failed_chunk_stops_the_rest():
     assert outcome.permanent_failure == "blocked"
 ```
 
-- [ ] **Step 4: 跑测试确认它失败**
+- [x] **Step 4: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_dispatcher.py -q
@@ -3045,7 +3045,7 @@ async def test_a_failed_chunk_stops_the_rest():
 
 预期:`ModuleNotFoundError: No module named 'app.dispatch'`。
 
-- [ ] **Step 5: 写 `app/dispatch/dispatcher.py`**
+- [x] **Step 5: 写 `app/dispatch/dispatcher.py`**
 
 ```python
 """Outbound dispatch.
@@ -3205,7 +3205,7 @@ class OutboundDispatcher:
 
 `app/dispatch/__init__.py` 留空。
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_dispatcher.py -q
@@ -3213,7 +3213,7 @@ class OutboundDispatcher:
 
 预期:19 passed。
 
-- [ ] **Step 7: 证明"不许按 provider 分支"这条守卫在新代码上仍然成立**
+- [x] **Step 7: 证明"不许按 provider 分支"这条守卫在新代码上仍然成立**
 
 ```bash
 .venv/bin/python -m pytest test/test_architecture.py -q
@@ -3221,7 +3221,7 @@ class OutboundDispatcher:
 
 预期:2 passed。`app/dispatch/`、`app/runtime/`、`app/ingress/`、`app/worker/`、`app/api/` 里一个 provider 名字都不该有。红了就说明有条规则写错了地方 —— 它属于某个适配器的 manifest。
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add app/dispatch/ app/core/config.py test/test_dispatcher.py
