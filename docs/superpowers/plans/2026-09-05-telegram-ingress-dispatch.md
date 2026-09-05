@@ -1225,7 +1225,7 @@ git commit -m "feat: adapter registry, the one dispatch point on a provider name
   - `InboundEvent(connection_id, provider, provider_update_id, payload, status, processed_at, error)`,唯一约束 `(provider, provider_update_id)`
   - `FailedJob(kind, connection_id, inbound_event_id, payload, error, attempts)`
 
-- [ ] **Step 1: 写会失败的测试 —— `test/test_inbound_models.py`**
+- [x] **Step 1: 写会失败的测试 —— `test/test_inbound_models.py`**
 
 ```python
 import pytest
@@ -1353,7 +1353,7 @@ async def test_a_failed_job_survives_its_connection(db_session):
     assert job.error == "boom"
 ```
 
-- [ ] **Step 2: 跑测试确认它失败**
+- [x] **Step 2: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_inbound_models.py -q
@@ -1361,7 +1361,7 @@ async def test_a_failed_job_survives_its_connection(db_session):
 
 预期:`ModuleNotFoundError: No module named 'app.models.inbound_event'`。
 
-- [ ] **Step 3: 写 `app/models/inbound_event.py`**
+- [x] **Step 3: 写 `app/models/inbound_event.py`**
 
 ```python
 from datetime import datetime
@@ -1437,7 +1437,7 @@ class InboundEvent(TimestampMixin, SQLModel, table=True):
     error: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
 ```
 
-- [ ] **Step 4: 写 `app/models/failed_job.py`**
+- [x] **Step 4: 写 `app/models/failed_job.py`**
 
 ```python
 from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
@@ -1493,7 +1493,7 @@ class FailedJob(TimestampMixin, SQLModel, table=True):
     )
 ```
 
-- [ ] **Step 5: 在 `app/models/__init__.py` 里登记两个新模型**
+- [x] **Step 5: 在 `app/models/__init__.py` 里登记两个新模型**
 
 漏掉这一步的后果是:表从 `SQLModel.metadata` 里消失,于是从每一次 autogenerate 里消失 —— 而且没有任何报错。
 
@@ -1524,7 +1524,7 @@ __all__ = [
 ]
 ```
 
-- [ ] **Step 6: 跑模型测试确认通过**
+- [x] **Step 6: 跑模型测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_inbound_models.py -q
@@ -1532,13 +1532,13 @@ __all__ = [
 
 预期:6 passed。测试用的 schema 是从 metadata 直接建的,所以这时候还没有迁移也能过 —— 下一步补迁移,`test_migrations.py` 是唯一会发现缺迁移的测试。
 
-- [ ] **Step 7: 生成迁移**
+- [x] **Step 7: 生成迁移**
 
 ```bash
 .venv/bin/python -m alembic revision --autogenerate -m "inbound events and failed jobs"
 ```
 
-- [ ] **Step 8: 读一遍生成的迁移**
+- [x] **Step 8: 读一遍生成的迁移**
 
 autogenerate 会猜错东西,不要盲签。打开 `migration/versions/` 里新出现的文件,确认 `upgrade()` 大致是这样:
 
@@ -1576,7 +1576,7 @@ def upgrade() -> None:
 2. **两个 `ondelete`**:`CASCADE` 和 `SET NULL` 各自在对的位置上。
 3. **`down_revision`** 指向 `243f3fa1ee04`。
 
-- [ ] **Step 9: 跑迁移漂移测试**
+- [x] **Step 9: 跑迁移漂移测试**
 
 ```bash
 .venv/bin/python -m pytest test/test_migrations.py -q
@@ -1584,7 +1584,7 @@ def upgrade() -> None:
 
 预期:2 passed。`test_migrations_produce_the_same_schema_as_the_models` 会把库推倒重建再 upgrade,然后对比 metadata —— 它红了就说明迁移和模型不一致,改迁移,别改模型。
 
-- [ ] **Step 10: 跑整个套件并提交**
+- [x] **Step 10: 跑整个套件并提交**
 
 ```bash
 .venv/bin/python -m pytest -q
