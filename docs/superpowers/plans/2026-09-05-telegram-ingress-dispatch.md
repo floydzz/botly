@@ -1609,7 +1609,7 @@ git commit -m "feat: inbound_event and failed_job tables"
   - `InMemoryDedupeStore()` —— 属性 `claimed: set[str]`
   - `dedupe_key(provider: str, provider_update_id: str) -> str`
 
-- [ ] **Step 1: 写会失败的测试 —— `test/test_dedupe.py`**
+- [x] **Step 1: 写会失败的测试 —— `test/test_dedupe.py`**
 
 ```python
 import pytest
@@ -1689,7 +1689,7 @@ async def test_the_real_redis_store_round_trips():
         await client.aclose()
 ```
 
-- [ ] **Step 2: 跑测试确认它失败**
+- [x] **Step 2: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_dedupe.py -q
@@ -1697,7 +1697,7 @@ async def test_the_real_redis_store_round_trips():
 
 预期:`ModuleNotFoundError: No module named 'app.ingress'`。
 
-- [ ] **Step 3: 写 `app/ingress/dedupe.py`**
+- [x] **Step 3: 写 `app/ingress/dedupe.py`**
 
 ```python
 """Inbound dedupe.
@@ -1756,7 +1756,7 @@ class InMemoryDedupeStore:
 
 `app/ingress/__init__.py` 留空。
 
-- [ ] **Step 4: 在 config 里加去重 TTL**
+- [x] **Step 4: 在 config 里加去重 TTL**
 
 在 `app/core/config.py` 的 `Settings` 里,`CREDENTIALS_ENCRYPTION_KEY` 那一行下面加:
 
@@ -1766,15 +1766,15 @@ class InMemoryDedupeStore:
     DEDUPE_TTL_SECONDS: int = 86_400
 ```
 
-- [ ] **Step 5: 跑测试确认通过**
+- [x] **Step 5: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_dedupe.py -q
 ```
 
-预期:7 passed(Redis 容器在跑的话)。
+预期:6 passed(Redis 容器在跑的话)。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add app/ingress/ app/core/config.py test/test_dedupe.py

@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     CREDENTIALS_ENCRYPTION_KEY: str = ""
 
+    # One day. Long enough to outlive any provider's retry schedule, short
+    # enough that the keyspace does not grow without bound.
+    DEDUPE_TTL_SECONDS: int = 86_400
+
     @property
     def is_production(self) -> bool:
         """The single place that decides what "production" means."""
