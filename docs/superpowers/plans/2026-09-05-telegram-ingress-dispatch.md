@@ -1801,7 +1801,7 @@ git commit -m "feat: redis-backed inbound dedupe behind a protocol"
 
 `get_inbound_queue` 会 import `app.worker.queue.CeleryInboundQueue`,那个模块要到 Task 7 才存在。这是**故意**的顺序:import 写在函数体内,而本 task 的每个测试都覆盖了这个依赖,所以那行永远不会执行。如果它执行了并报 `ModuleNotFoundError`,说明有测试忘了覆盖依赖 —— 那正是应该立刻知道的事,而不是让一个真的 Celery 客户端在测试里被构造出来。
 
-- [ ] **Step 1: 写 `app/ingress/queue.py`**
+- [x] **Step 1: 写 `app/ingress/queue.py`**
 
 ```python
 """The seam between ingress and runtime.
@@ -1831,7 +1831,7 @@ class InMemoryInboundQueue:
         self.enqueued.append(event_id)
 ```
 
-- [ ] **Step 2: 写会失败的测试 —— `test/test_webhooks.py`**
+- [x] **Step 2: 写会失败的测试 —— `test/test_webhooks.py`**
 
 ```python
 import time
@@ -2055,7 +2055,7 @@ async def test_the_ack_is_fast(db_session, wired):
     assert elapsed < 0.5
 ```
 
-- [ ] **Step 3: 跑测试确认它失败**
+- [x] **Step 3: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_webhooks.py -q
@@ -2063,7 +2063,7 @@ async def test_the_ack_is_fast(db_session, wired):
 
 预期:`ModuleNotFoundError: No module named 'app.api.webhooks'`。
 
-- [ ] **Step 4: 写 `app/api/webhooks.py`**
+- [x] **Step 4: 写 `app/api/webhooks.py`**
 
 ```python
 """Channel ingress.
@@ -2183,7 +2183,7 @@ async def receive_webhook(
 
 **关于 `db.commit()`:** 测试的 `db_session` fixture 把整个测试包在一个外层事务里,`commit()` 只提交到 savepoint,测试结束仍然整体回滚。生产里这个 commit 是必须的 —— Celery worker 是另一个连接,它必须能看到这一行,否则任务拿到一个查不到的 id。
 
-- [ ] **Step 5: 在 `app/main.py` 里注册路由**
+- [x] **Step 5: 在 `app/main.py` 里注册路由**
 
 ```python
 from fastapi import FastAPI
@@ -2209,7 +2209,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_webhooks.py -q
@@ -2217,7 +2217,7 @@ app = create_app()
 
 预期:9 passed。`get_inbound_queue` 里 import 的 `app.worker.queue` 在 Task 7 才存在 —— 但测试全都覆盖了这个依赖,所以那行 import 不会被执行。如果它被执行了,说明有测试漏了覆盖,那正是要知道的事。
 
-- [ ] **Step 7: 跑整个套件并提交**
+- [x] **Step 7: 跑整个套件并提交**
 
 ```bash
 .venv/bin/python -m pytest -q
