@@ -2447,7 +2447,7 @@ git commit -m "feat: celery app and the inbound event task"
 
 这是本计划里唯一一个刻意留白的地方,所以把边界说清楚:**Protocol 是最终形态,实现不是。** LangGraph 的大脑、RAG 检索、商务工具各有各的计划。`EchoBrain` 存在的意义是让第 3 步能证明管线通了,而不是让它看起来像个能用的机器人。
 
-- [ ] **Step 1: 写会失败的测试 —— `test/test_brain.py`**
+- [x] **Step 1: 写会失败的测试 —— `test/test_brain.py`**
 
 ```python
 from datetime import datetime, timezone
@@ -2522,7 +2522,7 @@ async def test_the_echo_brain_escalates_a_message_it_cannot_read():
     assert draft.reason
 ```
 
-- [ ] **Step 2: 跑测试确认它失败**
+- [x] **Step 2: 跑测试确认它失败**
 
 ```bash
 .venv/bin/python -m pytest test/test_brain.py -q
@@ -2530,7 +2530,7 @@ async def test_the_echo_brain_escalates_a_message_it_cannot_read():
 
 预期:`ModuleNotFoundError: No module named 'app.runtime'`。
 
-- [ ] **Step 3: 写 `app/runtime/brain.py`**
+- [x] **Step 3: 写 `app/runtime/brain.py`**
 
 ```python
 """The bot's brain, behind a Protocol.
@@ -2613,7 +2613,7 @@ class EchoBrain:
 
 `app/runtime/__init__.py` 留空。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 ```bash
 .venv/bin/python -m pytest test/test_brain.py -q
@@ -2621,7 +2621,7 @@ class EchoBrain:
 
 预期:6 passed。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add app/runtime/ test/test_brain.py
