@@ -10,3 +10,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# Frontend build output and Playwright scratch
+frontend/node_modules
+frontend/.nuxt
+frontend/.output
+.playwright-mcp
