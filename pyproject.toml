@@ -17,8 +17,11 @@ alembic = "*"
 pgvector = "*"
 redis = {extras = ["hiredis"], version = "*"}
 celery = {extras = ["redis"], version = "*"}
-pydantic = "^2"
+pydantic = {extras = ["email"], version = "^2"}
 pydantic-settings = "*"
+# app/core/security.py hashes passwords with it. Absent from this list the
+# whole API failed to import, and only the tests said so.
+bcrypt = "*"
 cryptography = "*"
 httpx = "*"
 greenlet = "*"
