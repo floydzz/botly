@@ -77,3 +77,31 @@ class RedisTokenBucket:
             _LUA_TOKEN_BUCKET, 1, key, self._capacity, self._refill, time.time()
         )
         return bool(allowed)
+
+
+_default: "RedisTokenBucket | None" = None
+
+
+def default_limiter() -> RateLimiter:
+    """The bucket both sender processes share.
+
+    The worker and the API each send on behalf of the same connection. Two
+    in-process buckets would each hold a full allowance, so the effective rate
+    against the provider would be double what was configured -- and a
+    provider-side rate limit is not a soft failure.
+
+    Built once per process: a new client per dispatch leaks a connection per
+    message. Tests keep InMemoryTokenBucket by injection and never reach here.
+    """
+    global _default
+    if _default is None:
+        from redis.asyncio import Redis
+
+        from app.core.config import settings
+
+        _default = RedisTokenBucket(
+            Redis.from_url(settings.REDIS_URL),
+            capacity=settings.OUTBOUND_RATE_CAPACITY,
+            refill_per_second=settings.OUTBOUND_RATE_REFILL_PER_SECOND,
+        )
+    return _default

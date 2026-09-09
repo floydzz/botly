@@ -40,3 +40,13 @@ def test_development_is_not_production():
 def test_production_requires_an_encryption_key():
     with pytest.raises(ValueError, match="CREDENTIALS_ENCRYPTION_KEY"):
         _settings(ENVIRONMENT="production", CREDENTIALS_ENCRYPTION_KEY="")
+
+
+def test_the_release_grace_period_has_an_intended_default():
+    """Release sets bot_muted_until = now + this.
+
+    Without a grace period the next customer message can arrive while the
+    agent's closing line is still in flight, and the bot answers over a person
+    who has just said goodbye.
+    """
+    assert _settings().BOT_MUTE_AFTER_RELEASE_SECONDS == 120

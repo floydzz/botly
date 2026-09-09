@@ -65,6 +65,13 @@ class Settings(BaseSettings):
     OUTBOUND_RATE_REFILL_PER_SECOND: float = 1.0
     OUTBOUND_MAX_ATTEMPTS: int = 3
 
+    # How long the bot stays quiet after an agent releases a conversation back
+    # to it. Without a grace period the next customer message can arrive while
+    # the agent's closing line is still in flight, and the bot answers over a
+    # person who has just said goodbye. Two minutes covers a goodbye; much
+    # longer and a genuinely new question sits unanswered.
+    BOT_MUTE_AFTER_RELEASE_SECONDS: int = 120
+
     @property
     def is_production(self) -> bool:
         """The single place that decides what "production" means."""

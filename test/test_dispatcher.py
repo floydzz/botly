@@ -288,3 +288,22 @@ async def test_a_failed_chunk_stops_the_rest():
 
     assert len(adapter.sent) == 1
     assert outcome.permanent_failure == "blocked"
+
+
+def test_the_default_limiter_is_shared_across_processes():
+    """In-process buckets were adequate while one worker was the only sender.
+
+    The API is now a second sender against the same provider quota, and two
+    full buckets for one connection double the effective outbound rate. A
+    provider-side rate limit is not a soft failure.
+    """
+    from app.dispatch.ratelimit import RedisTokenBucket, default_limiter
+
+    assert isinstance(default_limiter(), RedisTokenBucket)
+
+
+def test_the_default_limiter_is_built_once():
+    """A fresh Redis client per dispatch leaks a connection per message."""
+    from app.dispatch.ratelimit import default_limiter
+
+    assert default_limiter() is default_limiter()

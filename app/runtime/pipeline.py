@@ -20,13 +20,14 @@ from app.channels.types import InboundEnvelope
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.dispatch.dispatcher import OutboundDispatcher
-from app.dispatch.ratelimit import InMemoryTokenBucket
+from app.dispatch.ratelimit import default_limiter
 from app.models.bot import Bot
 from app.models.channel_connection import ChannelConnection
 from app.models.conversation import Conversation, HandoffState
 from app.models.failed_job import FailedJob
 from app.models.inbound_event import InboundEvent, InboundEventStatus
-from app.models.message import DeliveryStatus, Direction, Message, SenderType
+from app.dispatch.record import record_outbound
+from app.models.message import Direction, Message, SenderType
 from app.models.shop import Shop
 from app.runtime.brain import Brain, EchoBrain
 from app.runtime.escalation import EscalationPolicy, default_policy
@@ -83,11 +84,10 @@ async def run_inbound_pipeline(
 
         dispatcher = OutboundDispatcher(
             adapter,
-            limiter=limiter
-            or InMemoryTokenBucket(
-                capacity=settings.OUTBOUND_RATE_CAPACITY,
-                refill_per_second=settings.OUTBOUND_RATE_REFILL_PER_SECOND,
-            ),
+            # Redis, not in-process: the API is a second sender against the
+            # same provider quota, and two full buckets double the effective
+            # outbound rate. Tests inject InMemoryTokenBucket.
+            limiter=limiter or default_limiter(),
             max_attempts=settings.OUTBOUND_MAX_ATTEMPTS,
         )
 
@@ -126,7 +126,14 @@ async def run_inbound_pipeline(
                 db.add(conversation)
                 continue
 
-            _store_outbound(db, conversation, draft, outcome)
+            record_outbound(
+                db,
+                conversation,
+                draft.text,
+                [a.model_dump() for a in draft.attachments],
+                outcome,
+                SenderType.BOT,
+            )
 
             if outcome.permanent_failure:
                 await _fail(db, event, connection.id, outcome.permanent_failure)
@@ -188,31 +195,6 @@ async def _store_inbound(db, conversation: Conversation, envelope: InboundEnvelo
     conversation.last_message_at = envelope.sent_at
     db.add(conversation)
     await db.flush()
-
-
-def _store_outbound(db, conversation: Conversation, draft, outcome) -> None:
-    delivered = [r for r in outcome.sent if r.ok]
-    db.add(
-        Message(
-            conversation_id=conversation.id,
-            merchant_id=conversation.merchant_id,
-            direction=Direction.OUTBOUND,
-            sender_type=SenderType.BOT,
-            text=draft.text,
-            attachments=[a.model_dump() for a in draft.attachments],
-            provider_message_id=(
-                delivered[0].provider_message_id if delivered else None
-            ),
-            delivery_status=(
-                DeliveryStatus.FAILED
-                if outcome.permanent_failure
-                else DeliveryStatus.SENT
-            ),
-            error=outcome.permanent_failure,
-        )
-    )
-    conversation.last_message_at = datetime.now(timezone.utc)
-    db.add(conversation)
 
 
 def _bot_must_stay_quiet(conversation: Conversation) -> bool:
