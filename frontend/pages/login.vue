@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ApiError } from '~/composables/useApi'
+import { safeReturnPath } from '~/composables/useReturnPath'
 
 definePageMeta({ layout: 'bare' })
 useHead({ title: 'Sign in · botly' })
@@ -18,9 +19,11 @@ async function submit() {
   try {
     await auth.login(email.value, password.value)
     // The return path the guard stashed, so an agent who followed a link to a
-    // conversation lands on that conversation rather than a generic inbox.
-    const next = typeof route.query.next === 'string' ? route.query.next : '/app/inbox'
-    await navigateTo(next)
+    // conversation lands on that conversation rather than a generic inbox --
+    // but only after safeReturnPath has confirmed it points back at us. The
+    // query is attacker-controllable, and obeying it blindly is an open
+    // redirect off the back of a real, successful login.
+    await navigateTo(safeReturnPath(route.query.next))
   } catch (cause) {
     error.value =
       cause instanceof ApiError && cause.status === 401
