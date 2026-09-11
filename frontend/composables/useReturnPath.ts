@@ -1,5 +1,5 @@
 /** Where the app is sent after a successful sign-in when nothing else is asked for. */
-export const DEFAULT_RETURN_PATH = '/app/inbox'
+export const DEFAULT_RETURN_PATH = '/app/dashboard'
 
 /**
  * The return path the auth guard stashed, if it is safe to obey.

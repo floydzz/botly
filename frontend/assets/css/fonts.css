@@ -1,4 +1,10 @@
-/* Self-hosted, and that is the point: a fonts.googleapis.com request on a
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap');
+
+/* The original faces stay self-hosted as resilient fallbacks. Satoshi is the
+ * art-directed display/body face; if its CDN is unavailable, content still
+ * paints immediately in the bundled files below.
+ *
+ * Self-hosted, and that is the point: a fonts.googleapis.com request on a
  * landing page whose whole point is fluidity is a render-blocking round
  * trip to a third party before a single word is painted.
  *

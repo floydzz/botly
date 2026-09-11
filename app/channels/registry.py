@@ -12,6 +12,7 @@ this module is an explicit act.
 from collections.abc import Callable
 
 from app.channels.base import ChannelAdapter
+from app.channels.types import ChannelCapabilities
 from app.channels.fake.adapter import FakeAdapter
 from app.channels.telegram.adapter import TelegramAdapter
 from app.channels.telegram.api import DEFAULT_API_BASE
@@ -61,6 +62,18 @@ _BUILDERS: dict[str, Callable[[ChannelConnection, str | None], ChannelAdapter]] 
     TelegramAdapter.provider: _build_telegram,
     FakeAdapter.provider: _build_fake,
 }
+
+_MANIFESTS: dict[str, type[ChannelAdapter]] = {
+    TelegramAdapter.provider: TelegramAdapter,
+    FakeAdapter.provider: FakeAdapter,
+}
+
+
+def capabilities_for(provider: str) -> ChannelCapabilities:
+    adapter = _MANIFESTS.get(provider)
+    if adapter is None:
+        raise UnknownProvider(f"no adapter registered for provider {provider!r}")
+    return adapter.capabilities
 
 
 def build_adapter(

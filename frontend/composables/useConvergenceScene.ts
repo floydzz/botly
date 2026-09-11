@@ -272,6 +272,8 @@ export function useConvergenceScene(
   renderer.setClearColor(0x000000, 0)
 
   const scene = new THREE.Scene()
+  const flowGroup = new THREE.Group()
+  scene.add(flowGroup)
   const camera = new THREE.PerspectiveCamera(
     50,
     window.innerWidth / window.innerHeight,
@@ -347,7 +349,7 @@ export function useConvergenceScene(
 
   const points = new THREE.Points(geometry, material)
   points.frustumCulled = false
-  scene.add(points)
+  flowGroup.add(points)
 
   // --- the core -----------------------------------------------------------
   const coreMaterial = new THREE.ShaderMaterial({
@@ -360,7 +362,20 @@ export function useConvergenceScene(
     uniforms: { uAccent: { value: accent }, uIntensity: { value: 0.25 } },
   })
   const core = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), coreMaterial)
-  scene.add(core)
+  flowGroup.add(core)
+
+  // A faint faceted shell gives the convergence point an actual volume. It
+  // uses no lights or postprocessing and costs only a few dozen triangles.
+  const shellMaterial = new THREE.MeshBasicMaterial({
+    color: accent,
+    transparent: true,
+    opacity: 0.1,
+    wireframe: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  })
+  const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(0.48, 2), shellMaterial)
+  flowGroup.add(shell)
 
   // --- state --------------------------------------------------------------
   let progress = 0
@@ -369,9 +384,20 @@ export function useConvergenceScene(
   let onScreen = true
   let visible = typeof document === 'undefined' || document.visibilityState === 'visible'
   const clock = new THREE.Clock()
+  const pointer = new THREE.Vector2()
+  const pointerTarget = new THREE.Vector2()
 
   function render() {
-    material.uniforms.uTime.value = clock.getElapsedTime()
+    const elapsed = clock.getElapsedTime()
+    material.uniforms.uTime.value = elapsed
+    pointer.lerp(pointerTarget, 0.035)
+    flowGroup.rotation.y = pointer.x * 0.11 + progress * 0.16
+    flowGroup.rotation.x = -pointer.y * 0.075
+    flowGroup.rotation.z = Math.sin(progress * Math.PI) * -0.055
+    flowGroup.position.x = pointer.x * 0.18
+    flowGroup.position.y = pointer.y * 0.12
+    shell.rotation.x = elapsed * 0.12 + progress
+    shell.rotation.y = elapsed * -0.16 + progress * 1.4
     renderer.render(scene, camera)
   }
 
@@ -414,6 +440,14 @@ export function useConvergenceScene(
   }
   document.addEventListener('visibilitychange', onVisibility)
 
+  function onPointerMove(event: PointerEvent) {
+    pointerTarget.set(
+      (event.clientX / window.innerWidth) * 2 - 1,
+      -((event.clientY / window.innerHeight) * 2 - 1),
+    )
+  }
+  window.addEventListener('pointermove', onPointerMove, { passive: true })
+
   function onResize() {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
@@ -430,6 +464,8 @@ export function useConvergenceScene(
       // because more particles reach it -- not because a timeline said so.
       coreMaterial.uniforms.uIntensity.value = 0.18 + Math.pow(progress, 1.6) * 1.05
       core.scale.setScalar(1.0 - progress * 0.35)
+      shell.scale.setScalar(0.86 + progress * 0.7)
+      shellMaterial.opacity = 0.06 + progress * 0.18
       if (!running) render()
     },
 
@@ -461,10 +497,13 @@ export function useConvergenceScene(
       observer?.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('resize', onResize)
+      window.removeEventListener('pointermove', onPointerMove)
       geometry.dispose()
       material.dispose()
       core.geometry.dispose()
       coreMaterial.dispose()
+      shell.geometry.dispose()
+      shellMaterial.dispose()
       renderer.dispose()
     },
 
@@ -474,7 +513,7 @@ export function useConvergenceScene(
       // none of which canvas text is.
       const half = new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2)
       return nodes.map((node) => {
-        const projected = node.position.clone().project(camera)
+        const projected = node.position.clone().applyMatrix4(flowGroup.matrixWorld).project(camera)
         const x = projected.x * half.x + half.x
         const y = -projected.y * half.y + half.y
         return {

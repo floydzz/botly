@@ -34,7 +34,7 @@ onBeforeUnmount(() => motion?.destroy())
 </script>
 
 <template>
-  <main>
+  <div>
     <LandingHeroSection />
     <LandingProblemSection />
     <LandingChannelsSection />
@@ -42,5 +42,5 @@ onBeforeUnmount(() => motion?.destroy())
     <LandingHandoffSection />
     <LandingGuaranteeSection />
     <LandingRequestAccessSection />
-  </main>
+  </div>
 </template>

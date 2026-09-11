@@ -1,0 +1,9 @@
+node_modules
+.nuxt
+.output
+.git
+.DS_Store
+*.log
+test
+test-results
+playwright-report

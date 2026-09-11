@@ -45,6 +45,17 @@ export function useScrollMotion(
 
   const state = { progress: 0 }
   const triggers: ScrollTrigger[] = []
+  const animations: gsap.core.Animation[] = []
+
+  // The opening beat resolves in layers: navigation, thesis, supporting copy,
+  // then the controls. Short offsets keep it intentional without holding the
+  // visitor hostage behind a splash animation.
+  const heroIntro = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    .from('.nav-shell', { y: -18, opacity: 0, duration: 0.7 })
+    .from('.hero-kicker', { y: 16, opacity: 0, duration: 0.65 }, '-=0.35')
+    .from('.hero-title', { y: 54, opacity: 0, rotateX: -8, transformOrigin: '50% 100%', duration: 1.1 }, '-=0.4')
+    .from('.hero-copy .type-lead, .hero-orbit-copy, .hero-copy a', { y: 18, opacity: 0, duration: 0.7, stagger: 0.09 }, '-=0.55')
+  animations.push(heroIntro)
 
   if (scene) {
     const scrub = gsap.to(state, {
@@ -65,8 +76,47 @@ export function useScrollMotion(
         },
       },
     })
+    animations.push(scrub)
     if (scrub.scrollTrigger) triggers.push(scrub.scrollTrigger)
   }
+
+  const words = gsap.utils.toArray<HTMLElement>('.scrub-word')
+  if (words.length) {
+    gsap.set(words, { opacity: 0.12 })
+    const wordReveal = gsap.to(words, {
+      opacity: 1,
+      stagger: 0.055,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.scrub-statement',
+        start: 'top 78%',
+        end: 'bottom 34%',
+        scrub: 0.45,
+      },
+    })
+    animations.push(wordReveal)
+    if (wordReveal.scrollTrigger) triggers.push(wordReveal.scrollTrigger)
+  }
+
+  const cards = gsap.utils.toArray<HTMLElement>('.stack-card')
+  cards.slice(0, -1).forEach((card, index) => {
+    const next = cards[index + 1]
+    if (!next) return
+    const stack = gsap.to(card, {
+      scale: 0.92,
+      opacity: 0.42,
+      filter: 'blur(2px)',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: next,
+        start: 'top 72%',
+        end: 'top 18%',
+        scrub: 0.35,
+      },
+    })
+    animations.push(stack)
+    if (stack.scrollTrigger) triggers.push(stack.scrollTrigger)
+  })
 
   // One-shot entrances. These never touch the camera, so they cannot fight the
   // timeline above.
@@ -84,6 +134,7 @@ export function useScrollMotion(
   return {
     destroy() {
       triggers.forEach((trigger) => trigger.kill())
+      animations.forEach((animation) => animation.kill())
     },
   }
 }

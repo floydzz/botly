@@ -21,7 +21,7 @@ export default defineNuxtConfig({
       // httponly and samesite=lax (app/api/auth.py), so a cross-origin
       // frontend would simply not send it and every authenticated request
       // would 401. In production the same path is served by the reverse proxy.
-      '/api': { target: 'http://localhost:8000', changeOrigin: false },
+      '/api': { target: 'http://localhost:8004', changeOrigin: false },
     },
   },
 

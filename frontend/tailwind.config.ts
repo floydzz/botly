@@ -41,8 +41,8 @@ export default <Partial<Config>>{
         },
       },
       fontFamily: {
-        display: ['Inter Tight', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Satoshi', 'Inter Tight', 'Inter', 'system-ui', 'sans-serif'],
+        body: ['Satoshi', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {

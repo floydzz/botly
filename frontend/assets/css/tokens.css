@@ -10,19 +10,19 @@
  */
 
 :root {
-  --ground: #08090b;
-  --surface: #101216;
-  --raised: #171a20;
-  --border: #23262e;
-  --border-lit: #333844;
+  --ground: #07090a;
+  --surface: #0e1113;
+  --raised: #171b1d;
+  --border: #252a2c;
+  --border-lit: #3b4244;
 
-  --text: #f4f5f7;
-  --text-dim: #9ba1ac;
-  --text-mute: #5c626d;
+  --text: #f3f0e9;
+  --text-dim: #aaa9a3;
+  --text-mute: #666a68;
 
-  --accent: #f0a24b;
-  --accent-lit: #ffc978;
-  --accent-dim: rgba(240, 162, 75, 0.14);
+  --accent: #f1a44c;
+  --accent-lit: #ffca82;
+  --accent-dim: rgba(241, 164, 76, 0.13);
 
   --ok: #3fd07a;
   --warn: #f0a24b;
@@ -57,17 +57,23 @@ body {
   margin: 0;
   background: var(--ground);
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Satoshi', 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 1rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+html { scroll-behavior: smooth; }
+
+a, button { -webkit-tap-highlight-color: transparent; }
+
+button:active, a:active { transform: translateY(1px); }
+
 /* clamp()-driven, so there is no breakpoint at which the display type is
    momentarily the wrong size for the column it sits in. */
 .type-display {
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-family: 'Satoshi', 'Inter Tight', 'Inter', system-ui, sans-serif;
   font-size: clamp(3.5rem, 7vw, 6rem);
   font-weight: 700;
   line-height: 0.98;
@@ -75,15 +81,15 @@ body {
 }
 
 .type-h2 {
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  font-family: 'Satoshi', 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-size: clamp(2.75rem, 6vw, 6rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
 }
 
 .type-h3 {
-  font-family: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  font-family: 'Satoshi', 'Inter Tight', 'Inter', system-ui, sans-serif;
   font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 600;
   line-height: 1.25;
@@ -103,6 +109,125 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-mute);
+}
+
+.hero-title {
+  font-family: 'Satoshi', 'Inter Tight', sans-serif;
+  font-size: clamp(3.7rem, 8.7vw, 9rem);
+  font-weight: 500;
+  line-height: 0.86;
+  letter-spacing: -0.07em;
+}
+
+.hero-title-accent {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.hero-kicker, .section-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.nav-shell {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  background: rgba(9, 11, 12, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 60px rgba(0,0,0,0.18);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.brand-mark { box-shadow: inset 0 0 12px rgba(241,164,76,0.18), 0 0 18px rgba(241,164,76,0.08); }
+
+.nav-login {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  transition: border-color 180ms var(--ease), background 180ms var(--ease);
+}
+.nav-login:hover { border-color: var(--border-lit); background: rgba(255,255,255,0.04); }
+
+.scene-scrim {
+  background:
+    radial-gradient(circle at 73% 42%, transparent 0 20%, rgba(7,9,10,0.18) 53%, rgba(7,9,10,0.74) 100%),
+    linear-gradient(96deg, rgba(7,9,10,0.95) 0%, rgba(7,9,10,0.7) 39%, rgba(7,9,10,0.04) 76%);
+}
+
+.noise {
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+}
+
+.skip-link {
+  position: fixed; left: 1rem; top: -4rem; z-index: 50;
+  background: var(--accent); color: var(--ground); padding: .6rem .85rem; border-radius: .5rem;
+}
+.skip-link:focus { top: 1rem; }
+
+.question-field { background: radial-gradient(circle at center, rgba(241,164,76,.09), rgba(14,17,19,.72) 42%, rgba(8,10,11,.88)); }
+.question-orbit { animation: orbit-breathe 6s ease-in-out infinite; box-shadow: inset 0 0 70px rgba(241,164,76,.025); }
+.question-core { background: radial-gradient(circle at 36% 30%, #ffc77c, #b66520 56%, #352012); box-shadow: 0 0 70px rgba(241,164,76,.28); }
+.question-chip { top: 12%; animation: question-drift 7s ease-in-out infinite; box-shadow: inset 0 1px rgba(255,255,255,.04); }
+.question-chip:nth-of-type(3) { top: 34%; }
+.question-chip:nth-of-type(4) { top: 62%; }
+.question-chip:nth-of-type(5) { top: 78%; }
+.question-chip:nth-of-type(6) { top: 48%; }
+
+.scrub-word { opacity: 1; will-change: opacity; }
+
+.inline-signal {
+  display: inline-flex;
+  width: 1.45em;
+  height: .5em;
+  margin: 0 .08em;
+  align-items: center;
+  justify-content: center;
+  gap: .09em;
+  vertical-align: .14em;
+  border: 1px solid rgba(241,164,76,.34);
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(241,164,76,.25), rgba(14,17,19,.85));
+}
+.inline-signal i { width: .09em; height: .09em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 .22em var(--accent); }
+
+.channel-panel { flex: 1 1 0; transition: flex 650ms var(--ease), border-color 300ms ease; }
+.channel-panel.is-active { flex: 3.1 1 0; border-color: var(--border-lit); }
+.channel-note { opacity: 0; transform: translateY(10px); transition: opacity 350ms ease 180ms, transform 500ms var(--ease) 180ms; }
+.channel-panel.is-active .channel-note { opacity: 1; transform: none; }
+.channel-name { writing-mode: vertical-rl; transform: rotate(180deg); transition: transform 500ms var(--ease); }
+.channel-panel.is-active .channel-name { writing-mode: horizontal-tb; transform: none; font-size: clamp(2rem,4vw,4rem); }
+
+.stack-card { transform-origin: center top; will-change: transform, opacity; }
+.proof-card { transition: transform 500ms var(--ease), border-color 300ms ease; }
+.proof-card:hover { transform: translateY(-5px); border-color: var(--border-lit); }
+.tool-node { position: absolute; border: 1px solid var(--border); border-radius: .6rem; background: var(--raised); padding: .55rem .75rem; font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--text-dim); }
+.tool-flow::before, .tool-flow::after { content: ''; position: absolute; left: 20%; top: 50%; width: 62%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .35; transform: rotate(12deg); }
+.tool-flow::after { transform: rotate(-18deg); }
+.cta-stage { background: radial-gradient(circle at 90% 15%, rgba(241,164,76,.12), transparent 38%), rgba(14,17,19,.78); box-shadow: inset 0 1px rgba(255,255,255,.045); }
+.cta-orbit { box-shadow: 0 0 100px rgba(241,164,76,.08), inset 0 0 100px rgba(241,164,76,.04); }
+.scenario-enter-active, .scenario-leave-active { transition: opacity 260ms ease, transform 400ms var(--ease); }
+.scenario-enter-from { opacity: 0; transform: translateX(18px); }
+.scenario-leave-to { opacity: 0; transform: translateX(-12px); }
+
+@keyframes question-drift { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,-12px,0); } }
+@keyframes orbit-breathe { 0%,100% { transform: translate(-50%,-50%) scale(.94) rotate(0deg); opacity: .45; } 50% { transform: translate(-50%,-50%) scale(1.04) rotate(10deg); opacity: 1; } }
+
+@media (max-width: 1023px) {
+  .channel-panel, .channel-panel.is-active { flex: none; }
+  .channel-name, .channel-panel.is-active .channel-name { writing-mode: horizontal-tb; transform: none; }
+  .channel-note { opacity: 1; transform: none; }
+  .scene-scrim { background: linear-gradient(90deg, rgba(7,9,10,.9), rgba(7,9,10,.54)); }
+}
+
+@media (max-width: 640px) {
+  .hero-title { font-size: clamp(3.45rem, 17vw, 5.1rem); line-height: .9; }
+  .hero-title br { display: none; }
+  .question-chip { left: 5% !important; }
+  .question-chip:nth-of-type(even) { left: auto !important; right: 5%; }
 }
 
 /* Focus is never removed, only restyled. An inbox is worked with a keyboard

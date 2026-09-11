@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_RETURN_PATH, safeReturnPath } from '../composables/useReturnPath'
 
 describe('the post-login return path', () => {
+  it('lands on the dashboard when no destination was requested', () => {
+    expect(DEFAULT_RETURN_PATH).toBe('/app/dashboard')
+  })
+
   it('honours a same-origin path the guard stashed', () => {
     expect(safeReturnPath('/app/inbox/41')).toBe('/app/inbox/41')
   })

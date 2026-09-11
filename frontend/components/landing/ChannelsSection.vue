@@ -1,47 +1,50 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { CHANNELS, STATUS_COPY } from '~/content/channels'
+
+const active = ref(CHANNELS[0]?.id ?? '')
 </script>
 
 <template>
-  <LandingSection id="channels" eyebrow="Channels">
-    <h2 class="type-h2 max-w-[18ch]">What actually works today.</h2>
+  <LandingSection id="channels" eyebrow="One view, honest availability">
+    <div class="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+      <h2 class="type-h2 max-w-[14ch]">Every channel keeps its character.</h2>
+      <p class="max-w-[42ch] text-sm leading-relaxed text-dim">
+        One shared history does not mean pretending every platform behaves the same.
+        botly respects each channel’s limits, windows and approval state.
+      </p>
+    </div>
 
-    <p class="type-lead mt-6 max-w-measure">
-      Two of these are waiting on someone else. We would rather say so here than let you
-      find out after you have signed up.
-    </p>
-
-    <ul class="mt-12 divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface/70 backdrop-blur-sm">
-      <li
+    <div class="channel-accordion mt-16 flex min-h-[30rem] flex-col gap-2 lg:flex-row">
+      <article
         v-for="channel in CHANNELS"
         :key="channel.id"
-        class="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8"
+        class="channel-panel group relative min-h-40 cursor-pointer overflow-hidden rounded-xl border border-line bg-surface/65 p-6 backdrop-blur-xl lg:min-h-[30rem]"
+        :class="active === channel.id ? 'is-active' : ''"
+        tabindex="0"
+        @mouseenter="active = channel.id"
+        @focus="active = channel.id"
+        @click="active = channel.id"
       >
-        <div class="flex items-start gap-4">
-          <span class="mt-1.5 size-2.5 shrink-0 rounded-full" :style="{ background: channel.hue }" />
-          <div>
-            <h3 class="font-display text-base font-semibold">{{ channel.name }}</h3>
-            <p class="mt-1 max-w-measure text-[0.8125rem] text-dim">{{ channel.note }}</p>
+        <div class="absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100" :style="{ background: `radial-gradient(circle at 50% 20%, color-mix(in srgb, ${channel.hue} 14%, transparent), transparent 62%)` }" />
+        <div class="relative flex h-full flex-col">
+          <div class="flex items-center justify-between gap-4">
+            <span class="size-2.5 rounded-full shadow-[0_0_18px_currentColor]" :style="{ background: channel.hue, color: channel.hue }" />
+            <span class="font-mono text-[0.6rem] uppercase tracking-[0.16em]" :class="channel.status === 'live' ? 'text-ok' : 'text-mute'">
+              {{ STATUS_COPY[channel.status] }}
+            </span>
+          </div>
+          <div class="mt-auto pt-14">
+            <h3 class="channel-name font-display text-2xl font-medium tracking-[-0.035em]">{{ channel.name }}</h3>
+            <p class="channel-note mt-4 max-w-[32ch] text-sm leading-relaxed text-dim">{{ channel.note }}</p>
           </div>
         </div>
+      </article>
+    </div>
 
-        <span
-          class="type-label shrink-0 rounded-sm border px-2 py-1"
-          :class="
-            channel.status === 'live'
-              ? 'border-ok/40 text-ok'
-              : 'border-line text-mute'
-          "
-        >
-          {{ STATUS_COPY[channel.status] }}
-        </span>
-      </li>
-    </ul>
-
-    <p class="mt-6 max-w-measure text-[0.8125rem] text-mute">
-      WhatsApp needs Meta business verification; Shopee needs Open Platform partner
-      registration. Both are filed processes measured in weeks, and neither is something
-      we can hurry. When one clears, it appears here as available and not before.
+    <p class="mt-7 max-w-[75ch] text-xs leading-relaxed text-mute">
+      WhatsApp requires Meta business verification; Shopee requires Open Platform partner
+      registration. Both remain listed as pending until the providers approve them.
     </p>
   </LandingSection>
 </template>
