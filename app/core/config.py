@@ -1,4 +1,6 @@
-from pydantic import model_validator
+from decimal import Decimal
+
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The only spellings that mean anything. An unrecognised value is a
@@ -64,6 +66,16 @@ class Settings(BaseSettings):
     OUTBOUND_RATE_CAPACITY: int = 20
     OUTBOUND_RATE_REFILL_PER_SECOND: float = 1.0
     OUTBOUND_MAX_ATTEMPTS: int = 3
+
+    # Optional until an operator enables a model. Keys never leave the server.
+    OPENAI_API_KEY: SecretStr = SecretStr("")
+    GEMINI_API_KEY: SecretStr = SecretStr("")
+    ANTHROPIC_API_KEY: SecretStr = SecretStr("")
+    QWEN_API_KEY: SecretStr = SecretStr("")
+    QWEN_BASE_URL: str = ""
+    LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
+    BILLING_CREDITS_PER_USD: Decimal = Field(default=Decimal("1000"), gt=0)
+    PUBLIC_WEBHOOK_BASE_URL: str = ""
 
     # How long the bot stays quiet after an agent releases a conversation back
     # to it. Without a grace period the next customer message can arrive while

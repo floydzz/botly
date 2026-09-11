@@ -22,6 +22,7 @@ from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.models.merchant import Merchant
 from app.models.shop import Shop
 from app.runtime.pipeline import run_inbound_pipeline
+from app.runtime.brain import EchoBrain
 
 pytestmark = pytest.mark.integration
 
@@ -93,7 +94,7 @@ def drain(db_session, monkeypatch):
             pipeline, "build_adapter", lambda c, webhook_url=None: _Recording()
         )
         await run_inbound_pipeline(
-            event_id, session_factory=_session_factory(db_session)
+            event_id, session_factory=_session_factory(db_session), brain=EchoBrain()
         )
         return sent
 

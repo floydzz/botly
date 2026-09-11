@@ -29,6 +29,10 @@ class Bot(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
         default="anthropic",
         sa_column=Column(String(64), nullable=False, server_default="anthropic"),
     )
+    llm_model_id: int | None = Field(
+        default=None,
+        sa_column=Column(BigInteger, ForeignKey("llm_models.id"), nullable=True),
+    )
     enabled_tools: list[str] = Field(
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default="[]"),

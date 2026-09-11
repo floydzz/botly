@@ -6,6 +6,7 @@ a blocked bot and a dead DNS server are both outcomes the dispatcher has to
 record, not exceptions it has to catch.
 """
 
+import logging
 from typing import Any, ClassVar, Protocol
 
 import httpx
@@ -16,6 +17,9 @@ from pydantic import BaseModel, ConfigDict, model_validator
 # hostname is the provider's name. Override per connection via
 # ChannelConnection.config["api_base"].
 DEFAULT_API_BASE = "https://api.telegram.org"
+
+# HTTPX's INFO request log includes the full URL, which contains the bot token.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 class TelegramApiResponse(BaseModel):
@@ -67,14 +71,16 @@ class HttpTelegramApi:
         client = self._client or httpx.AsyncClient(timeout=self._timeout)
         try:
             raw = await client.post(url, json=payload, timeout=self._timeout)
-        except httpx.HTTPError as exc:
-            return TelegramApiResponse(ok=False, description=str(exc))
+        except httpx.HTTPError:
+            return TelegramApiResponse(ok=False, description="channel transport failed")
         finally:
             if self._client is None:
                 await client.aclose()
 
         try:
             body = raw.json()
+            if not isinstance(body, dict):
+                raise ValueError("response must be an object")
         except ValueError:
             return TelegramApiResponse(
                 ok=False,

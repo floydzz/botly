@@ -6,6 +6,7 @@ a model missing from every migration -- and the omission is silent.
 """
 
 from app.models.bot import Bot
+from app.models.billing import CreditEntry, CreditWallet, LlmModel, LlmUsage
 from app.models.channel_connection import ChannelConnection, ChannelConnectionStatus
 from app.models.conversation import Conversation, HandoffState
 from app.models.failed_job import FailedJob
@@ -18,6 +19,10 @@ from app.models.user import User
 
 __all__ = [
     "Bot",
+    "CreditEntry",
+    "CreditWallet",
+    "LlmModel",
+    "LlmUsage",
     "ChannelConnection",
     "ChannelConnectionStatus",
     "Conversation",

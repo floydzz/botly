@@ -13,7 +13,8 @@ over a human is worse than a bot saying nothing.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert
 
 from app.channels.registry import UnknownProvider, build_adapter
 from app.channels.types import InboundEnvelope
@@ -29,7 +30,8 @@ from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.dispatch.record import record_outbound
 from app.models.message import Direction, Message, SenderType
 from app.models.shop import Shop
-from app.runtime.brain import Brain, EchoBrain
+from app.runtime.brain import Brain, DraftReply
+from app.llm.brain import MeteredBrain
 from app.runtime.escalation import EscalationPolicy, default_policy
 
 # States in which the bot must stay quiet. pending_human is included on
@@ -44,18 +46,25 @@ async def run_inbound_pipeline(
     brain: Brain | None = None,
     limiter=None,
     policy: EscalationPolicy | None = None,
+    billing_session_factory=None,
+    provider_factory=None,
 ) -> None:
     session_factory = session_factory or AsyncSessionLocal
-    brain = brain or EchoBrain()
     policy = policy or default_policy()
 
     async with session_factory() as db:
-        event = await db.get(InboundEvent, event_id)
-        if event is None or event.status is not InboundEventStatus.PENDING:
+        event = (await db.execute(update(InboundEvent).where(
+            InboundEvent.id == event_id, InboundEvent.status == InboundEventStatus.PENDING,
+        ).values(status=InboundEventStatus.PROCESSING).returning(InboundEvent))).scalar_one_or_none()
+        if event is None:
             # Already handled, or the row is gone. acks_late means a worker
             # that died mid-task gets the message again; that redelivery must
             # be a no-op, not a second reply.
             return
+
+        # Durable claim: a crashed/ambiguous external call requires explicit review.
+        # A second worker must never start another paid call for the same event.
+        await db.commit()
 
         connection = (
             await db.execute(
@@ -80,7 +89,13 @@ async def run_inbound_pipeline(
             return
 
         bot = await db.get(Bot, connection.bot_id)
+        if bot is None or bot.deleted_at is not None:
+            await _fail(db, event, connection.id, "the bot no longer exists")
+            return
         shop = await db.get(Shop, bot.shop_id)
+        if shop is None or shop.deleted_at is not None:
+            await _fail(db, event, connection.id, "the shop no longer exists")
+            return
 
         dispatcher = OutboundDispatcher(
             adapter,
@@ -95,19 +110,39 @@ async def run_inbound_pipeline(
             conversation = await _get_or_create_conversation(
                 db, connection, bot, shop.merchant_id, envelope
             )
-            await _store_inbound(db, conversation, envelope)
+            inbound_message = await _store_inbound(db, conversation, envelope)
+            await db.commit()
+            # Serialize processing against other messages in this conversation.
+            # Billing commits use a separate session so this lock spans the send.
+            conversation = (await db.execute(select(Conversation).where(
+                Conversation.id == conversation.id,
+            ).with_for_update().execution_options(populate_existing=True))).scalar_one()
 
             if _bot_must_stay_quiet(conversation):
                 continue
 
-            draft = await brain.respond(envelope)
+            turns = await _replies_since_a_human_spoke(db, conversation) + 1
+            preflight = await policy.evaluate(envelope, draft=DraftReply(text=""), bot_turns=turns, max_bot_turns=bot.escalation_max_bot_turns)
+            if preflight.escalate:
+                _escalate(conversation, preflight.reason)
+                db.add(conversation)
+                continue
+            selected_brain = brain
+            if selected_brain is None and bot.llm_model_id is not None:
+                options = {"provider_factory": provider_factory} if provider_factory else {}
+                selected_brain = MeteredBrain(db=db, bot=bot, conversation=conversation, event_id=event.id, inbound_message_id=inbound_message.id, session_factory=billing_session_factory, **options)
+            if selected_brain is None:
+                _escalate(conversation, "select a model before enabling this bot")
+                db.add(conversation)
+                continue
+            draft = await selected_brain.respond(envelope)
             signal = await policy.evaluate(
                 envelope,
                 draft=draft,
                 # The reply about to be made, counted 1-based: on the third
                 # attempt the threshold should stop it, not permit it and
                 # catch the fourth.
-                bot_turns=await _replies_since_a_human_spoke(db, conversation) + 1,
+                bot_turns=turns,
                 max_bot_turns=bot.escalation_max_bot_turns,
             )
             if signal.escalate:
@@ -116,7 +151,8 @@ async def run_inbound_pipeline(
                 continue
 
             outcome = await dispatcher.dispatch(
-                connection, draft, last_inbound_at=conversation.last_inbound_at
+                connection, draft, last_inbound_at=conversation.last_inbound_at,
+                external_thread_id=conversation.external_thread_id,
             )
             if outcome.escalated:
                 # The channel itself refused -- a closed session window, or
@@ -149,29 +185,20 @@ async def _get_or_create_conversation(
     merchant_id: int,
     envelope: InboundEnvelope,
 ) -> Conversation:
+    await db.execute(insert(Conversation).values(
+        merchant_id=merchant_id, bot_id=bot.id, channel_connection_id=connection.id,
+        external_thread_id=envelope.external_thread_id, customer_ref=envelope.sender_ref,
+    ).on_conflict_do_nothing(constraint="uq_conversations_connection_thread"))
     conversation = (
         await db.execute(
             select(Conversation).where(
                 Conversation.channel_connection_id == connection.id,
                 Conversation.external_thread_id == envelope.external_thread_id,
-            )
+            ).with_for_update().execution_options(populate_existing=True)
         )
     ).scalar_one_or_none()
 
-    if conversation is None:
-        conversation = Conversation(
-            # Copied from the bot -> shop -> merchant chain rather than
-            # trusted from anywhere else. The denormalised key is only safe
-            # while it is always derived.
-            merchant_id=merchant_id,
-            bot_id=bot.id,
-            channel_connection_id=connection.id,
-            external_thread_id=envelope.external_thread_id,
-            customer_ref=envelope.sender_ref,
-        )
-        db.add(conversation)
-        await db.flush()
-    elif conversation.handoff_state is HandoffState.RESOLVED:
+    if conversation.handoff_state is HandoffState.RESOLVED:
         # A closed conversation that gets a new message is a new question.
         conversation.handoff_state = HandoffState.BOT
         conversation.escalation_reason = None
@@ -180,21 +207,21 @@ async def _get_or_create_conversation(
 
 
 async def _store_inbound(db, conversation: Conversation, envelope: InboundEnvelope):
-    db.add(
-        Message(
-            conversation_id=conversation.id,
-            merchant_id=conversation.merchant_id,
-            direction=Direction.INBOUND,
-            sender_type=SenderType.CUSTOMER,
-            text=envelope.text,
-            attachments=[a.model_dump() for a in envelope.attachments],
-            provider_message_id=envelope.provider_message_id,
-        )
+    message = Message(
+        conversation_id=conversation.id,
+        merchant_id=conversation.merchant_id,
+        direction=Direction.INBOUND,
+        sender_type=SenderType.CUSTOMER,
+        text=envelope.text,
+        attachments=[a.model_dump() for a in envelope.attachments],
+        provider_message_id=envelope.provider_message_id,
     )
+    db.add(message)
     conversation.last_inbound_at = envelope.sent_at
     conversation.last_message_at = envelope.sent_at
     db.add(conversation)
     await db.flush()
+    return message
 
 
 def _bot_must_stay_quiet(conversation: Conversation) -> bool:

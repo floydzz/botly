@@ -83,7 +83,7 @@ async def test_a_transport_error_becomes_a_response_not_an_exception():
 
     assert response.ok is False
     assert response.error_code is None
-    assert "dns went away" in response.description
+    assert response.description == "channel transport failed"
 
 
 async def test_malformed_json_does_not_raise():

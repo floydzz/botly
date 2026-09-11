@@ -173,7 +173,7 @@ class TelegramAdapter:
     # --- sending ------------------------------------------------------------
 
     async def send(self, conn: ChannelConnection, out: OutboundMessage) -> SendResult:
-        chat_id = (conn.config or {}).get("chat_id") or conn.external_ref
+        chat_id = out.external_thread_id or (conn.config or {}).get("chat_id") or conn.external_ref
         response = await self._api.call(
             self._token,
             "sendMessage",
@@ -200,7 +200,7 @@ class TelegramAdapter:
                 "TelegramAdapter needs a webhook_url to connect; without one "
                 "setWebhook would silently leave the bot deaf."
             )
-        await self._api.call(
+        response = await self._api.call(
             self._token,
             "setWebhook",
             {
@@ -211,6 +211,8 @@ class TelegramAdapter:
                 "drop_pending_updates": False,
             },
         )
+        if not response.ok:
+            raise ValueError("channel webhook registration failed")
 
     async def disconnect(self, conn: ChannelConnection) -> None:
         # Safe before connect and safe twice: deleteWebhook on a bot with no

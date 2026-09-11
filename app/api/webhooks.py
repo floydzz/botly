@@ -88,7 +88,7 @@ async def receive_webhook(
 
     for envelope in envelopes:
         if not await dedupe.claim(
-            dedupe_key(envelope.provider, envelope.provider_update_id)
+            dedupe_key(f"{connection.id}:{envelope.provider}", envelope.provider_update_id)
         ):
             continue
 

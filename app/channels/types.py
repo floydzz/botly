@@ -88,6 +88,7 @@ class OutboundMessage(BaseModel):
     """
 
     text: str | None = None
+    external_thread_id: str | None = None
     attachments: tuple[Attachment, ...] = ()
     template_name: str | None = None
     template_variables: dict[str, str] = Field(default_factory=dict)

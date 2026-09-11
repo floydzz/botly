@@ -10,6 +10,7 @@ from app.models.base import EnumString, SoftDeleteMixin, TimestampMixin
 
 class ChannelConnectionStatus(str, Enum):
     ACTIVE = "active"
+    CONNECTING = "connecting"
     # Credentials failed to refresh. The connection still exists and the inbox
     # still shows its history; sends are expected to fail until it is repaired.
     DEGRADED = "degraded"

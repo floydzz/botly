@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
-from app.api import auth, health, webhooks
+from app.api import auth, billing, bots, health, webhooks
+from app.channels import management
 from app.core.config import settings
 
 
@@ -14,6 +15,9 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
     app.include_router(auth.router)
+    app.include_router(billing.router)
+    app.include_router(bots.router)
+    app.include_router(management.router)
     app.include_router(health.router)
     app.include_router(webhooks.router)
     return app

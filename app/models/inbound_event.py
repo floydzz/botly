@@ -18,6 +18,7 @@ from app.models.base import EnumString, TimestampMixin
 
 class InboundEventStatus(str, Enum):
     PENDING = "pending"
+    PROCESSING = "processing"
     PROCESSED = "processed"
     # The worker gave up. The row stays, and a FailedJob points at it.
     FAILED = "failed"
@@ -37,7 +38,7 @@ class InboundEvent(TimestampMixin, SQLModel, table=True):
         # path and Redis can be flushed; this makes double-processing
         # impossible rather than merely unlikely.
         UniqueConstraint(
-            "provider", "provider_update_id", name="uq_inbound_events_dedupe"
+            "connection_id", "provider", "provider_update_id", name="uq_inbound_events_dedupe"
         ),
     )
 

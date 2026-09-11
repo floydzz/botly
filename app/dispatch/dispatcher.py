@@ -24,6 +24,19 @@ from app.models.channel_connection import ChannelConnection
 from app.runtime.brain import DraftReply
 
 
+def window_is_closed(caps, last_inbound_at: datetime | None) -> bool:
+    """Return whether a channel's session window has shut.
+
+    The inbox send policy and the dispatcher both use this function so the UI
+    cannot promise a send that the provider path will refuse.
+    """
+    if caps.session_window is None:
+        return False
+    if last_inbound_at is None:
+        return True
+    return datetime.now(timezone.utc) - last_inbound_at > caps.session_window
+
+
 def chunk_text(text: str, limit: int) -> list[str]:
     """Split to the channel's limit, preferring a break a reader would choose.
 
@@ -81,6 +94,7 @@ class OutboundDispatcher:
         conn: ChannelConnection,
         draft: DraftReply,
         last_inbound_at: datetime | None = None,
+        external_thread_id: str | None = None,
     ) -> DispatchOutcome:
         caps = type(self._adapter).capabilities
 
@@ -110,7 +124,7 @@ class OutboundDispatcher:
         pieces = chunk_text(draft.text or "", caps.max_text_len)
         results: list[SendResult] = []
         for piece in pieces:
-            result = await self._send_with_retry(conn, OutboundMessage(text=piece))
+            result = await self._send_with_retry(conn, OutboundMessage(text=piece, external_thread_id=external_thread_id))
             results.append(result)
             if not result.ok:
                 # Chunks 1 and 3 of a three-part answer is worse than chunk 1
@@ -123,13 +137,7 @@ class OutboundDispatcher:
 
     @staticmethod
     def _window_is_closed(caps, last_inbound_at: datetime | None) -> bool:
-        if caps.session_window is None:
-            return False
-        if last_inbound_at is None:
-            # Unknown is closed, not open. Treating it as open turns a guard
-            # failure into a provider rejection.
-            return True
-        return datetime.now(timezone.utc) - last_inbound_at > caps.session_window
+        return window_is_closed(caps, last_inbound_at)
 
     async def _send_with_retry(
         self, conn: ChannelConnection, out: OutboundMessage

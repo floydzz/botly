@@ -24,4 +24,13 @@ def process_inbound_event(self, event_id: int) -> None:
     """
     from app.runtime.pipeline import run_inbound_pipeline
 
-    asyncio.run(run_inbound_pipeline(event_id))
+    async def run():
+        from app.core.database import engine
+        try:
+            await run_inbound_pipeline(event_id)
+        finally:
+            # Celery calls asyncio.run per task. Do not reuse asyncpg connections
+            # whose previous event loop has already closed.
+            await engine.dispose()
+
+    asyncio.run(run())
