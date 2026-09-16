@@ -34,9 +34,8 @@ class InboundEvent(TimestampMixin, SQLModel, table=True):
 
     __tablename__ = "inbound_events"
     __table_args__ = (
-        # The second line of dedupe defence, behind Redis. Redis is the fast
-        # path and Redis can be flushed; this makes double-processing
-        # impossible rather than merely unlikely.
+        # Update IDs are scoped to a connection: two bots may receive the
+        # same ID. This is the authoritative receipt dedupe constraint.
         UniqueConstraint(
             "connection_id", "provider", "provider_update_id", name="uq_inbound_events_dedupe"
         ),
@@ -68,6 +67,9 @@ class InboundEvent(TimestampMixin, SQLModel, table=True):
             server_default="pending",
             index=True,
         ),
+    )
+    enqueued_at: datetime | None = Field(
+        default=None, sa_type=DateTime(timezone=True), nullable=True
     )
     processed_at: datetime | None = Field(
         default=None, sa_type=DateTime(timezone=True), nullable=True

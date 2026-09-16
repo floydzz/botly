@@ -306,3 +306,12 @@ async def test_resolve_file_url_returns_none_when_the_file_is_gone():
     api.responses.append(TelegramApiResponse(ok=False, description="file not found"))
 
     assert await make_adapter(api).resolve_file_url("tg-file://gone") is None
+
+
+async def test_reply_destination_overrides_connection_defaults():
+    api = FakeTelegramApi()
+    adapter = make_adapter(api)
+    conn = ChannelConnection(id=1, bot_id=1, provider="telegram", external_ref="@bot", config={"chat_id": "wrong-chat"})
+    await adapter.send(conn, OutboundMessage(text="hello", external_thread_id="customer-chat"))
+    assert api.calls[-1][2]["chat_id"] == "customer-chat"
+    assert conn.config == {"chat_id": "wrong-chat"}

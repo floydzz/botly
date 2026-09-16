@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -41,11 +42,10 @@ async def _connection(db_session) -> ChannelConnection:
 def wired(db_session):
     """The app with its database, dedupe store and queue swapped for the
     test's own, so the route under test is the real one."""
-    from app.api.webhooks import get_dedupe_store, get_inbound_queue
+    from app.api.webhooks import get_inbound_queue
 
     store, queue = InMemoryDedupeStore(), InMemoryInboundQueue()
     app.dependency_overrides[get_db] = lambda: db_session
-    app.dependency_overrides[get_dedupe_store] = lambda: store
     app.dependency_overrides[get_inbound_queue] = lambda: queue
     yield store, queue
     app.dependency_overrides.clear()
@@ -138,6 +138,7 @@ async def test_a_duplicate_that_slips_past_redis_is_caught_by_the_constraint(
             provider="telegram",
             provider_update_id="900",
             payload={},
+            enqueued_at=datetime.now(timezone.utc),
         )
     )
     await db_session.flush()
@@ -217,3 +218,44 @@ async def test_the_ack_is_fast(db_session, wired):
         elapsed = time.perf_counter() - started
 
     assert elapsed < 0.5
+
+
+async def test_two_bots_can_receive_the_same_update_id(db_session, wired):
+    first = await _connection(db_session)
+    second = ChannelConnection(bot_id=first.bot_id, provider="telegram", external_ref="@second_bot")
+    second.set_credentials({"bot_token": "456:DEF", "secret_token": SECRET})
+    db_session.add(second)
+    await db_session.flush()
+    async with _client() as client:
+        for conn in (first, second):
+            response = await client.post(f"/webhooks/telegram/{conn.id}", json=_update(), headers={SECRET_HEADER: SECRET})
+            assert response.status_code == 200
+    assert len(wired[1].enqueued) == 2
+
+
+async def test_queue_failure_is_recoverable_on_redelivery(db_session, wired):
+    from app.api.webhooks import get_inbound_queue
+
+    class UnavailableQueue:
+        async def enqueue(self, event_id):
+            raise RuntimeError("broker unavailable")
+
+    conn = await _connection(db_session)
+    app.dependency_overrides[get_inbound_queue] = UnavailableQueue
+    async with _client() as client:
+        response = await client.post(f"/webhooks/telegram/{conn.id}", json=_update(), headers={SECRET_HEADER: SECRET})
+        assert response.status_code == 503
+        app.dependency_overrides[get_inbound_queue] = lambda: wired[1]
+        response = await client.post(f"/webhooks/telegram/{conn.id}", json=_update(), headers={SECRET_HEADER: SECRET})
+        assert response.status_code == 200
+    assert len(wired[1].enqueued) == 1
+    assert len((await db_session.execute(select(InboundEvent))).scalars().all()) == 1
+
+
+@pytest.mark.parametrize("payload", [[], None, {"message": {"text": "hi"}}])
+async def test_invalid_payload_shape_is_rejected(db_session, wired, payload):
+    import json
+    conn = await _connection(db_session)
+    async with _client() as client:
+        response = await client.post(f"/webhooks/telegram/{conn.id}", content=json.dumps(payload), headers={SECRET_HEADER: SECRET})
+    assert response.status_code == 400

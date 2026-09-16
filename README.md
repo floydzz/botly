@@ -65,3 +65,10 @@ Shopee Open Platform partner registration and WhatsApp Business verification are
 approval-gated and sit on the critical path. They are not engineering work and they
 take weeks. **Neither has been started as of 2026-09-05, and the code is two build-order
 steps ahead of them.** Status and application details: `docs/approvals.md`.
+
+## Telegram-first shared orchestration
+
+The shared receiver routes each message through the same conversation runtime,
+reply engine, escalation policy and dispatcher. Telegram is the first live adapter;
+the current reply engine is an echo stub. See [orchestration](docs/orchestration.md)
+for the processing flow, local Telegram setup and remaining reliability work.

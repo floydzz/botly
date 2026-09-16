@@ -1,39 +1,26 @@
 """Channel ingress.
 
 The order of operations here is a correctness requirement, not a style: verify
-the signature against the raw bytes, dedupe, persist raw, ACK 200, and only
-then enqueue. Nothing slow is allowed in this function -- no LLM call, no
+the signature against the raw bytes, persist raw, enqueue, and ACK 200. Nothing slow is allowed in this function -- no LLM call, no
 outbound HTTP, no waiting on a task result. A slow ACK makes the provider
 retry, and a retry is a second reply to the customer.
 """
 
 import json
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from redis.asyncio import Redis
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.channels.registry import UnknownProvider, build_adapter
-from app.core.config import settings
 from app.core.database import get_db
-from app.ingress.dedupe import DedupeStore, RedisDedupeStore, dedupe_key
 from app.ingress.queue import InboundQueue
 from app.models.channel_connection import ChannelConnection
 from app.models.inbound_event import InboundEvent
 
 router = APIRouter(tags=["webhooks"])
-
-_redis_client: Redis | None = None
-
-
-def get_dedupe_store() -> DedupeStore:
-    global _redis_client
-    if _redis_client is None:
-        _redis_client = Redis.from_url(settings.REDIS_URL)
-    return RedisDedupeStore(_redis_client, ttl_seconds=settings.DEDUPE_TTL_SECONDS)
-
 
 def get_inbound_queue() -> InboundQueue:
     from app.worker.queue import CeleryInboundQueue
@@ -47,7 +34,6 @@ async def receive_webhook(
     connection_id: int,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    dedupe: DedupeStore = Depends(get_dedupe_store),
     queue: InboundQueue = Depends(get_inbound_queue),
 ) -> Response:
     connection = (
@@ -80,34 +66,44 @@ async def receive_webhook(
     except ValueError:
         raise HTTPException(status_code=400, detail="malformed payload") from None
 
-    envelopes = adapter.parse_inbound(payload)
-    if not envelopes:
-        # A delivery receipt or a poll answer. Nothing to run, but it did
-        # arrive, and the provider still needs its 200.
-        return Response(status_code=200)
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="payload must be an object")
+    try:
+        envelopes = adapter.parse_inbound(payload)
+    except (ValueError, KeyError, TypeError, OverflowError):
+        raise HTTPException(status_code=400, detail="malformed payload") from None
 
+    # The database is the authoritative receipt log. A Redis claim before
+    # persistence can lose an update when persistence or queue publication fails.
+    event_ids = []
     for envelope in envelopes:
-        if not await dedupe.claim(
-            dedupe_key(f"{connection.id}:{envelope.provider}", envelope.provider_update_id)
-        ):
-            continue
-
-        event = InboundEvent(
+        statement = insert(InboundEvent).values(
             connection_id=connection.id,
-            provider=envelope.provider,
+            provider=provider,
             provider_update_id=envelope.provider_update_id,
             payload=payload,
-        )
-        db.add(event)
-        try:
-            await db.flush()
-        except IntegrityError:
-            # Redis missed it -- flushed, or a race. The unique constraint is
-            # the backstop, and losing that race is a duplicate, not an error.
-            await db.rollback()
-            continue
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        ).on_conflict_do_nothing(constraint="uq_inbound_events_dedupe")
+        await db.execute(statement)
+        event = (await db.execute(select(InboundEvent).where(
+            InboundEvent.connection_id == connection.id,
+            InboundEvent.provider == provider,
+            InboundEvent.provider_update_id == envelope.provider_update_id,
+        ))).scalar_one()
+        if event.enqueued_at is None:
+            event_ids.append(event.id)
+    await db.commit()
 
+    # Persist the complete batch before publishing any tasks. If publication
+    # fails, a provider retry finds the durable, unpublished rows and retries.
+    for event_id in dict.fromkeys(event_ids):
+        event = await db.get(InboundEvent, event_id)
+        try:
+            await queue.enqueue(event_id)
+        except Exception:
+            raise HTTPException(status_code=503, detail="queue unavailable; retry delivery") from None
+        event.enqueued_at = datetime.now(timezone.utc)
         await db.commit()
-        await queue.enqueue(event.id)
 
     return Response(status_code=200)

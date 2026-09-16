@@ -46,11 +46,10 @@ async def _connection(db_session) -> ChannelConnection:
 
 @pytest.fixture
 def wired(db_session):
-    from app.api.webhooks import get_dedupe_store, get_inbound_queue
+    from app.api.webhooks import get_inbound_queue
 
     store, queue = InMemoryDedupeStore(), InMemoryInboundQueue()
     app.dependency_overrides[get_db] = lambda: db_session
-    app.dependency_overrides[get_dedupe_store] = lambda: store
     app.dependency_overrides[get_inbound_queue] = lambda: queue
     # Yields the queue: every test here asserts on what got enqueued.
     yield queue
@@ -199,3 +198,19 @@ async def test_a_media_only_message_escalates_and_sends_nothing(db_session, wire
     assert sent == []
     event = (await db_session.execute(select(InboundEvent))).scalars().one()
     assert event.status is InboundEventStatus.PROCESSED
+
+
+async def test_batched_updates_each_reply_once_to_their_own_thread(db_session, wired, drain):
+    import json
+    conn = await _connection(db_session)
+    body = json.dumps({"updates": [
+        {"update_id": "batch-1", "thread": "alice", "from": "a", "ts": 1757000000, "text": "one"},
+        {"update_id": "batch-2", "thread": "bob", "from": "b", "ts": 1757000000, "text": "two"},
+    ]}).encode()
+    assert await _deliver(conn.id, body) == 200
+    sent = []
+    for event_id in wired.enqueued:
+        sent.extend(await drain(event_id))
+    assert [(m.external_thread_id, m.text) for m in sent] == [
+        ("alice", "botly received: one"), ("bob", "botly received: two")
+    ]

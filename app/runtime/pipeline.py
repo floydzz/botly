@@ -83,7 +83,15 @@ async def run_inbound_pipeline(
             await _fail(db, event, connection.id, str(exc))
             return
 
-        envelopes = adapter.parse_inbound(event.payload)
+        # One receipt represents one provider update. Some providers batch
+        # updates in a delivery, so processing the whole payload here would
+        # replay every message once for each queued receipt.
+        envelopes = [
+            envelope
+            for envelope in adapter.parse_inbound(event.payload)
+            if envelope.provider == event.provider
+            and envelope.provider_update_id == event.provider_update_id
+        ]
         if not envelopes:
             await _mark_processed(db, event)
             return

@@ -57,7 +57,7 @@ class InboundEnvelope(BaseModel):
     provider: str = Field(min_length=1)
     # The provider's own conversation key -- a chat id, a thread id.
     external_thread_id: str = Field(min_length=1)
-    # Unique per delivery. Ingress dedupes on (provider, provider_update_id)
+    # Unique per connection. Ingress dedupes on (connection, provider, update_id)
     # against both Redis and the inbound_event table, because Meta retries
     # aggressively and will deliver the same update more than once.
     provider_update_id: str = Field(min_length=1)
@@ -87,6 +87,7 @@ class OutboundMessage(BaseModel):
     template is required is the channel's business, not the brain's.
     """
 
+    external_thread_id: str | None = Field(default=None, min_length=1)
     text: str | None = None
     external_thread_id: str | None = None
     attachments: tuple[Attachment, ...] = ()
