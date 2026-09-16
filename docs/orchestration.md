@@ -1,6 +1,8 @@
 # Telegram-first orchestration
 
-All channels enter through `POST /webhooks/{provider}/{connection_id}`:
+All channels enter through `POST /webhooks/{provider}/{connection_id}`. The
+route passes the raw delivery to `app.ingress.receiver.CentralReceiver`, which
+is the shared receiver module:
 
 ```text
 Telegram / future channel
