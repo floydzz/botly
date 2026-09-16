@@ -3,21 +3,19 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "d7a3c8149b20"
-down_revision = "c37e229a7075"
+# The current migration chain already scopes receipt deduplication by
+# connection. This migration only records successful queue publication.
+down_revision = "9d10a0010002"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.drop_constraint("uq_inbound_events_dedupe", "inbound_events", type_="unique")
-    op.create_unique_constraint("uq_inbound_events_dedupe", "inbound_events",
-                                ["connection_id", "provider", "provider_update_id"])
-    op.add_column("inbound_events", sa.Column("enqueued_at", sa.DateTime(timezone=True), nullable=True))
+    op.add_column(
+        "inbound_events",
+        sa.Column("enqueued_at", sa.DateTime(timezone=True), nullable=True),
+    )
 
 
 def downgrade():
-    # Fails safely if multiple connections now share an update ID.
     op.drop_column("inbound_events", "enqueued_at")
-    op.drop_constraint("uq_inbound_events_dedupe", "inbound_events", type_="unique")
-    op.create_unique_constraint("uq_inbound_events_dedupe", "inbound_events",
-                                ["provider", "provider_update_id"])
