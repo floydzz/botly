@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from app.core.config import Settings
@@ -50,3 +52,17 @@ def test_the_release_grace_period_has_an_intended_default():
     who has just said goodbye.
     """
     assert _settings().BOT_MUTE_AFTER_RELEASE_SECONDS == 120
+
+def test_blank_vercel_env_values_use_intended_defaults():
+    settings = Settings(
+        ENVIRONMENT="development",
+        DATABASE_URL="postgresql+asyncpg://u:p@localhost:5433/botly",
+        CREDENTIALS_ENCRYPTION_KEY="x" * 44,
+        SQL_ECHO="",
+        LLM_TIMEOUT_SECONDS="",
+        BILLING_CREDITS_PER_USD="",
+    )
+
+    assert settings.SQL_ECHO is False
+    assert settings.LLM_TIMEOUT_SECONDS == 60
+    assert settings.BILLING_CREDITS_PER_USD == Decimal("1000")

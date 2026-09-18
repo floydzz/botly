@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The only spellings that mean anything. An unrecognised value is a
@@ -89,6 +89,27 @@ class Settings(BaseSettings):
     # person who has just said goodbye. Two minutes covers a goodbye; much
     # longer and a genuinely new question sits unanswered.
     BOT_MUTE_AFTER_RELEASE_SECONDS: int = 120
+
+    @field_validator("SQL_ECHO", mode="before")
+    @classmethod
+    def _coerce_empty_sql_echo(cls, value):
+        if value == "":
+            return False
+        return value
+
+    @field_validator("LLM_TIMEOUT_SECONDS", mode="before")
+    @classmethod
+    def _coerce_empty_llm_timeout(cls, value):
+        if value == "":
+            return 60
+        return value
+
+    @field_validator("BILLING_CREDITS_PER_USD", mode="before")
+    @classmethod
+    def _coerce_empty_billing_credits(cls, value):
+        if value == "":
+            return Decimal("1000")
+        return value
 
     @property
     def is_production(self) -> bool:
