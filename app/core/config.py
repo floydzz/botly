@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
     BILLING_CREDITS_PER_USD: Decimal = Field(default=Decimal("1000"), gt=0)
     PUBLIC_WEBHOOK_BASE_URL: str = ""
+    # Qdrant is deliberately separate from Postgres: vectors are indexed data,
+    # while the document record remains the auditable source of truth.
+    QDRANT_URL: str = "http://localhost:6333"
+    KNOWLEDGE_STORAGE_DIR: str = ".data/knowledge"
+    KNOWLEDGE_MAX_UPLOAD_BYTES: int = 25 * 1024 * 1024
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
     # How long the bot stays quiet after an agent releases a conversation back
     # to it. Without a grace period the next customer message can arrive while

@@ -1,4 +1,5 @@
 import asyncio
+import re
 from logging.config import fileConfig
 
 from alembic import context
@@ -18,6 +19,25 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = SQLModel.metadata
+_PARTITION_NAME = re.compile(r"^llm_(?:runs|run_events)_\d{4}_\d{2}$")
+
+
+def _include_object(object_, name, type_, reflected, compare_to):
+    """Partitions are implementation tables, not independent schema models."""
+    table = object_ if type_ == "table" else getattr(object_, "table", None)
+    if reflected and table is not None and _PARTITION_NAME.match(table.name):
+        return False
+    # PostgreSQL exposes inherited copies of this constraint for every monthly
+    # partition. Only the named parent constraint belongs in the model.
+    if (
+        reflected
+        and type_ == "foreign_key_constraint"
+        and table is not None
+        and table.name == "llm_run_events"
+        and name != "fk_llm_run_events_run"
+    ):
+        return False
+    return True
 
 
 def _render_item(type_, obj, autogen_context):
@@ -43,6 +63,7 @@ def _run_migrations(connection: Connection) -> None:
         compare_type=True,
         compare_server_default=True,
         render_item=_render_item,
+        include_object=_include_object,
     )
     with context.begin_transaction():
         context.run_migrations()

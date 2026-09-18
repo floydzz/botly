@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 
 const email = ref('')
-const shop = ref('')
+const brand = ref('')
 const submitted = ref(false)
 
 function submit() {
-  const body = encodeURIComponent(`I'd like access to botly.\n\nEmail: ${email.value}\nShop: ${shop.value || '—'}\n`)
+  const body = encodeURIComponent(`I'd like access to botly.\n\nEmail: ${email.value}\nShop: ${brand.value || '—'}\n`)
   window.location.href = `mailto:hello@botly.app?subject=${encodeURIComponent('Access request')}&body=${body}`
   submitted.value = true
 }
@@ -24,7 +24,7 @@ function submit() {
 
         <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
           <UiField v-model="email" label="Email" type="email" placeholder="you@yourshop.com" autocomplete="email" required />
-          <UiField v-model="shop" label="Shop or brand" placeholder="What you sell and where" />
+          <UiField v-model="brand" label="Brand or brand" placeholder="What you sell and where" />
           <UiButton type="submit">Request access</UiButton>
           <p v-if="submitted" class="text-xs text-ok">Your mail client should have opened. If it did not, write to hello@botly.app.</p>
           <p class="mt-2 text-xs text-mute">Already have an account? <NuxtLink to="/login" class="text-body underline underline-offset-4">Sign in</NuxtLink></p>

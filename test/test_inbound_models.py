@@ -6,7 +6,7 @@ from app.models.channel_connection import ChannelConnection
 from app.models.failed_job import FailedJob
 from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.models.merchant import Merchant
-from app.models.shop import Shop
+from app.models.brand import Brand
 
 pytestmark = pytest.mark.integration
 
@@ -15,10 +15,10 @@ async def _connection(db_session) -> ChannelConnection:
     merchant = Merchant(name="Kedai Siti")
     db_session.add(merchant)
     await db_session.flush()
-    shop = Shop(merchant_id=merchant.id, name="Kedai Siti Official", platform="standalone")
-    db_session.add(shop)
+    brand = Brand(merchant_id=merchant.id, name="Kedai Siti Official", platform="standalone")
+    db_session.add(brand)
     await db_session.flush()
-    bot = Bot(shop_id=shop.id, name="Siti Bot")
+    bot = Bot(brand_id=brand.id, name="Siti Bot")
     db_session.add(bot)
     await db_session.flush()
     conn = ChannelConnection(bot_id=bot.id, provider="telegram", external_ref="@siti_bot")

@@ -72,3 +72,8 @@ The shared receiver routes each message through the same conversation runtime,
 reply engine, escalation policy and dispatcher. Telegram is the first live adapter;
 the current reply engine is an echo stub. See [orchestration](docs/orchestration.md)
 for the processing flow, local Telegram setup and remaining reliability work.
+
+## LangGraph manager
+
+The manager and its per-bot RAG, OCR, Voice, and Tools worker switches are
+documented in [LangGraph architecture](docs/langgraph-architecture.md).

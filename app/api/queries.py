@@ -8,7 +8,7 @@ from app.api.deps import TenantScope
 from app.models.bot import Bot
 from app.models.channel_connection import ChannelConnection
 from app.models.conversation import Conversation
-from app.models.shop import Shop
+from app.models.brand import Brand
 
 
 def conversations_for(scope: TenantScope) -> Select:
@@ -18,10 +18,10 @@ def conversations_for(scope: TenantScope) -> Select:
 def bots_for(scope: TenantScope) -> Select:
     return (
         select(Bot)
-        .join(Shop, Shop.id == Bot.shop_id)
+        .join(Brand, Brand.id == Bot.brand_id)
         .where(
-            Shop.merchant_id == scope.merchant_id,
-            Shop.deleted_at.is_(None),
+            Brand.merchant_id == scope.merchant_id,
+            Brand.deleted_at.is_(None),
             Bot.deleted_at.is_(None),
         )
     )
@@ -31,10 +31,10 @@ def connections_for(scope: TenantScope) -> Select:
     return (
         select(ChannelConnection)
         .join(Bot, Bot.id == ChannelConnection.bot_id)
-        .join(Shop, Shop.id == Bot.shop_id)
+        .join(Brand, Brand.id == Bot.brand_id)
         .where(
-            Shop.merchant_id == scope.merchant_id,
-            Shop.deleted_at.is_(None),
+            Brand.merchant_id == scope.merchant_id,
+            Brand.deleted_at.is_(None),
             Bot.deleted_at.is_(None),
             ChannelConnection.deleted_at.is_(None),
         )

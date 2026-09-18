@@ -14,15 +14,35 @@ from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.models.login_session import LoginSession
 from app.models.merchant import Merchant
 from app.models.message import DeliveryStatus, Direction, Message, SenderType
-from app.models.shop import Shop
+from app.models.orchestration import (
+    BotWorker,
+    LlmRun,
+    LlmRunEvent,
+    LlmRunStatus,
+    PendingToolAction,
+    PendingToolActionStatus,
+    ToolWriteMode,
+    ToolDefinition,
+    WorkerDefinition,
+    WorkerKey,
+)
+from app.models.brand import Brand
+from app.models.knowledge import KnowledgeChunk, KnowledgeDocument, KnowledgeDocumentStatus
 from app.models.user import User
 
 __all__ = [
     "Bot",
+    "BotWorker",
     "CreditEntry",
     "CreditWallet",
     "LlmModel",
     "LlmUsage",
+    "KnowledgeChunk",
+    "KnowledgeDocument",
+    "KnowledgeDocumentStatus",
+    "LlmRun",
+    "LlmRunEvent",
+    "LlmRunStatus",
     "ChannelConnection",
     "ChannelConnectionStatus",
     "Conversation",
@@ -35,7 +55,13 @@ __all__ = [
     "LoginSession",
     "Merchant",
     "Message",
+    "PendingToolAction",
+    "PendingToolActionStatus",
     "SenderType",
-    "Shop",
+    "Brand",
     "User",
+    "ToolWriteMode",
+    "ToolDefinition",
+    "WorkerDefinition",
+    "WorkerKey",
 ]

@@ -29,9 +29,10 @@ from app.models.failed_job import FailedJob
 from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.dispatch.record import record_outbound
 from app.models.message import Direction, Message, SenderType
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.runtime.brain import Brain, DraftReply
 from app.llm.brain import MeteredBrain
+from app.orchestration.runtime import LangGraphBrain
 from app.runtime.escalation import EscalationPolicy, default_policy
 
 # States in which the bot must stay quiet. pending_human is included on
@@ -100,9 +101,9 @@ async def run_inbound_pipeline(
         if bot is None or bot.deleted_at is not None:
             await _fail(db, event, connection.id, "the bot no longer exists")
             return
-        shop = await db.get(Shop, bot.shop_id)
-        if shop is None or shop.deleted_at is not None:
-            await _fail(db, event, connection.id, "the shop no longer exists")
+        brand = await db.get(Brand, bot.brand_id)
+        if brand is None or brand.deleted_at is not None:
+            await _fail(db, event, connection.id, "the brand no longer exists")
             return
 
         dispatcher = OutboundDispatcher(
@@ -116,7 +117,7 @@ async def run_inbound_pipeline(
 
         for envelope in envelopes:
             conversation = await _get_or_create_conversation(
-                db, connection, bot, shop.merchant_id, envelope
+                db, connection, bot, brand.merchant_id, envelope
             )
             inbound_message = await _store_inbound(db, conversation, envelope)
             await db.commit()
@@ -138,7 +139,22 @@ async def run_inbound_pipeline(
             selected_brain = brain
             if selected_brain is None and bot.llm_model_id is not None:
                 options = {"provider_factory": provider_factory} if provider_factory else {}
-                selected_brain = MeteredBrain(db=db, bot=bot, conversation=conversation, event_id=event.id, inbound_message_id=inbound_message.id, session_factory=billing_session_factory, **options)
+                responder = MeteredBrain(
+                    db=db,
+                    bot=bot,
+                    conversation=conversation,
+                    event_id=event.id,
+                    inbound_message_id=inbound_message.id,
+                    session_factory=billing_session_factory,
+                    **options,
+                )
+                selected_brain = LangGraphBrain(
+                    db=db,
+                    bot=bot,
+                    conversation=conversation,
+                    inbound_message_id=inbound_message.id,
+                    responder=responder,
+                )
             if selected_brain is None:
                 _escalate(conversation, "select a model before enabling this bot")
                 db.add(conversation)

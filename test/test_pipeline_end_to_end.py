@@ -20,7 +20,7 @@ from app.models.channel_connection import ChannelConnection
 from app.models.failed_job import FailedJob
 from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.models.merchant import Merchant
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.runtime.pipeline import run_inbound_pipeline
 from app.runtime.brain import EchoBrain
 
@@ -31,10 +31,10 @@ async def _connection(db_session) -> ChannelConnection:
     merchant = Merchant(name="Warung Budi")
     db_session.add(merchant)
     await db_session.flush()
-    shop = Shop(merchant_id=merchant.id, name="Budi Store", platform="standalone")
-    db_session.add(shop)
+    brand = Brand(merchant_id=merchant.id, name="Budi Store", platform="standalone")
+    db_session.add(brand)
     await db_session.flush()
-    bot = Bot(shop_id=shop.id, name="Budi Bot")
+    bot = Bot(brand_id=brand.id, name="Budi Bot")
     db_session.add(bot)
     await db_session.flush()
     conn = ChannelConnection(bot_id=bot.id, provider="fake", external_ref="budi-1")

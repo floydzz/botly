@@ -25,6 +25,14 @@ services:
       timeout: 3s
       retries: 10
 
+  qdrant:
+    image: qdrant/qdrant:v1.19.1
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -37,6 +45,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      QDRANT_URL: http://qdrant:6333
+      KNOWLEDGE_STORAGE_DIR: /data/knowledge
       BOTLY_DEMO_EMAIL: ${BOTLY_DEMO_EMAIL:-demo@botly.dev}
       BOTLY_DEMO_PASSWORD: ${BOTLY_DEMO_PASSWORD:-botly-demo}
       BOTLY_DEMO_NAME: ${BOTLY_DEMO_NAME:-Demo Operator}
@@ -44,11 +54,15 @@ services:
     command: ["sh", "-c", "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     ports:
       - "8004:8000"
+    volumes:
+      - knowledge_data:/data/knowledge
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      qdrant:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
       interval: 10s
@@ -69,10 +83,16 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      QDRANT_URL: http://qdrant:6333
+      KNOWLEDGE_STORAGE_DIR: /data/knowledge
     command: ["celery", "-A", "app.worker.celery_app:celery_app", "worker", "--loglevel=info"]
+    volumes:
+      - knowledge_data:/data/knowledge
     depends_on:
       api:
         condition: service_healthy
+      qdrant:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
@@ -88,3 +108,5 @@ services:
 
 volumes:
   botly_pgdata:
+  qdrant_data:
+  knowledge_data:

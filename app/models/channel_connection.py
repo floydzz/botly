@@ -46,7 +46,7 @@ class ChannelConnection(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
     )
     provider: str = Field(sa_column=Column(String(32), nullable=False, index=True))
     # The provider's own identifier for this endpoint: a Telegram bot username,
-    # a WhatsApp phone number id, a Shopee shop id.
+    # a WhatsApp phone number id, a Shopee brand id.
     external_ref: str = Field(sa_column=Column(String(191), nullable=False))
     credentials_encrypted: str = Field(
         default="", sa_column=Column(Text, nullable=False, server_default="")

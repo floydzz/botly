@@ -5,7 +5,7 @@ from app.models.base import SoftDeleteMixin, TimestampMixin
 
 
 class Merchant(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
-    """The billing tenant. Owns shops; holds no commerce credentials itself."""
+    """The billing tenant. Owns brands; holds no commerce credentials itself."""
 
     __tablename__ = "merchants"
 

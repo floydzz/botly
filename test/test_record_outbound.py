@@ -18,7 +18,7 @@ from app.models.channel_connection import ChannelConnection
 from app.models.conversation import Conversation
 from app.models.merchant import Merchant
 from app.models.message import DeliveryStatus, Direction, SenderType
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.models.user import User
 
 pytestmark = pytest.mark.integration
@@ -28,10 +28,10 @@ async def _conversation(db) -> Conversation:
     merchant = Merchant(name=f"M{datetime.now(timezone.utc).timestamp()}")
     db.add(merchant)
     await db.flush()
-    shop = Shop(merchant_id=merchant.id, name="S", platform="standalone")
-    db.add(shop)
+    brand = Brand(merchant_id=merchant.id, name="S", platform="standalone")
+    db.add(brand)
     await db.flush()
-    bot = Bot(shop_id=shop.id, name="B")
+    bot = Bot(brand_id=brand.id, name="B")
     db.add(bot)
     await db.flush()
     connection = ChannelConnection(

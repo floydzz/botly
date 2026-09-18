@@ -13,7 +13,7 @@ def _key(monkeypatch):
 
 
 def test_roundtrip_preserves_the_payload():
-    payload = {"bot_token": "123:ABC", "shop_id": 99}
+    payload = {"bot_token": "123:ABC", "brand_id": 99}
 
     assert crypto.decrypt_credentials(crypto.encrypt_credentials(payload)) == payload
 

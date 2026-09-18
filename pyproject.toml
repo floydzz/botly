@@ -25,6 +25,11 @@ bcrypt = "*"
 cryptography = "*"
 httpx = "*"
 greenlet = "*"
+langgraph = "^1.2.11"
+qdrant-client = "^1.19.1"
+python-multipart = "^0.0.32"
+pypdf = "^6.19.0"
+python-docx = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"

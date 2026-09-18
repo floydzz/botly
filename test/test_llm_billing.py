@@ -17,7 +17,7 @@ from app.models.conversation import Conversation, HandoffState
 from app.models.inbound_event import InboundEvent, InboundEventStatus
 from app.models.merchant import Merchant
 from app.models.message import Message, SenderType
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.runtime.pipeline import run_inbound_pipeline
 
 
@@ -40,11 +40,11 @@ def test_exact_cost_weighted_credits_include_cache_and_round_up():
 async def graph(db):
     merchant = Merchant(name=f"credits-{uuid4().hex}")
     db.add(merchant); await db.flush()
-    shop = Shop(merchant_id=merchant.id, name="Shop", platform="standalone")
-    db.add(shop); await db.flush()
+    brand = Brand(merchant_id=merchant.id, name="Brand", platform="standalone")
+    db.add(brand); await db.flush()
     choice = model()
     db.add(choice); await db.flush()
-    bot = Bot(shop_id=shop.id, name="Bot", llm_model_id=choice.id)
+    bot = Bot(brand_id=brand.id, name="Bot", llm_model_id=choice.id)
     db.add(bot); await db.flush()
     channel = ChannelConnection(bot_id=bot.id, provider="fake", external_ref=uuid4().hex)
     channel.set_credentials({})

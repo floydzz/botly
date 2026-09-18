@@ -10,6 +10,24 @@ from sqlmodel import SQLModel
 import app.models  # noqa: F401
 from app.core.config import settings
 
+
+def _include_partition_aware(object_, name, type_, reflected, compare_to):
+    """Monthly trace partitions are generated from their parent tables."""
+    import re
+
+    table = object_ if type_ == "table" else getattr(object_, "table", None)
+    if reflected and table is not None and re.match(r"^llm_(?:runs|run_events)_\d{4}_\d{2}$", table.name):
+        return False
+    if (
+        reflected
+        and type_ == "foreign_key_constraint"
+        and table is not None
+        and table.name == "llm_run_events"
+        and name != "fk_llm_run_events_run"
+    ):
+        return False
+    return True
+
 pytestmark = pytest.mark.integration
 
 
@@ -43,7 +61,10 @@ async def test_migrations_produce_the_same_schema_as_the_models():
     def _upgrade_and_diff(sync_conn):
         cfg.attributes["connection"] = sync_conn
         command.upgrade(cfg, "head")
-        context = MigrationContext.configure(sync_conn, opts={"compare_type": True})
+        context = MigrationContext.configure(
+            sync_conn,
+            opts={"compare_type": True, "include_object": _include_partition_aware},
+        )
         return compare_metadata(context, SQLModel.metadata)
 
     async with engine.begin() as conn:

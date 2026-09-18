@@ -6,8 +6,8 @@ useHead({ title: 'Settings · botly' })
 <template>
   <AppPlannedPage
     title="Settings"
-    description="Update your profile, shop details and account security preferences."
+    description="Update your profile, brand details and account security preferences."
     icon="ph:gear-six-bold"
-    next-step="Profile, shop and password endpoints need to be added before these settings can be edited safely."
+    next-step="Profile, brand and password endpoints need to be added before these settings can be edited safely."
   />
 </template>

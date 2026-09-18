@@ -4,16 +4,16 @@ from sqlmodel import Field, SQLModel
 from app.models.base import SoftDeleteMixin, TimestampMixin
 
 
-class Shop(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
-    """A Shopee shop or a brand.
+class Brand(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
+    """A merchant-owned brand.
 
-    Separate from Merchant because commerce credentials belong to the shop: one
-    merchant may run several shops, each with its own Shopee authorisation.
+    Separate from Merchant because commerce credentials belong to the brand: one
+    merchant may run several brands, each with its own Shopee authorisation.
     """
 
-    __tablename__ = "shops"
+    __tablename__ = "brands"
     __table_args__ = (
-        UniqueConstraint("platform", "external_shop_id", name="uq_shops_platform_external_id"),
+        UniqueConstraint("platform", "external_brand_id", name="uq_brands_platform_external_id"),
     )
 
     id: int | None = Field(
@@ -32,6 +32,6 @@ class Shop(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
     # "shopee", "standalone", ... A plain string, not an enum: adding a
     # commerce platform must not require a migration.
     platform: str = Field(sa_column=Column(String(32), nullable=False))
-    external_shop_id: str | None = Field(
+    external_brand_id: str | None = Field(
         default=None, sa_column=Column(String(128), nullable=True)
     )

@@ -19,7 +19,7 @@ from app.models.channel_connection import ChannelConnection, ChannelConnectionSt
 from app.models.conversation import Conversation, HandoffState
 from app.models.merchant import Merchant
 from app.models.message import Direction, Message, SenderType
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.models.user import User
 
 
@@ -57,30 +57,30 @@ async def seed_development_user() -> None:
             db.add(existing)
             await db.flush()
 
-        shop = (
+        brand = (
             await db.execute(
-                select(Shop).where(
-                    Shop.merchant_id == merchant.id,
-                    Shop.name == "Rasa Home Store",
+                select(Brand).where(
+                    Brand.merchant_id == merchant.id,
+                    Brand.name == "Rasa Home Store",
                 )
             )
         ).scalar_one_or_none()
-        if shop is None:
-            shop = Shop(
+        if brand is None:
+            brand = Brand(
                 merchant_id=merchant.id,
                 name="Rasa Home Store",
                 platform="standalone",
             )
-            db.add(shop)
+            db.add(brand)
             await db.flush()
 
         bot = (
             await db.execute(
-                select(Bot).where(Bot.shop_id == shop.id, Bot.name == "Order assistant")
+                select(Bot).where(Bot.brand_id == brand.id, Bot.name == "Order assistant")
             )
         ).scalar_one_or_none()
         if bot is None:
-            bot = Bot(shop_id=shop.id, name="Order assistant")
+            bot = Bot(brand_id=brand.id, name="Order assistant")
             db.add(bot)
             await db.flush()
 

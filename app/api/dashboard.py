@@ -17,7 +17,7 @@ from app.models.bot import Bot
 from app.models.channel_connection import ChannelConnection, ChannelConnectionStatus
 from app.models.conversation import Conversation, HandoffState
 from app.models.message import Message
-from app.models.shop import Shop
+from app.models.brand import Brand
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -77,10 +77,10 @@ async def summary(
     active_bots = (
         await db.execute(
             select(func.count(Bot.id))
-            .join(Shop, Shop.id == Bot.shop_id)
+            .join(Brand, Brand.id == Bot.brand_id)
             .where(
-                Shop.merchant_id == scope.merchant_id,
-                Shop.deleted_at.is_(None),
+                Brand.merchant_id == scope.merchant_id,
+                Brand.deleted_at.is_(None),
                 Bot.deleted_at.is_(None),
             )
         )
@@ -90,10 +90,10 @@ async def summary(
         await db.execute(
             select(func.count(ChannelConnection.id))
             .join(Bot, Bot.id == ChannelConnection.bot_id)
-            .join(Shop, Shop.id == Bot.shop_id)
+            .join(Brand, Brand.id == Bot.brand_id)
             .where(
-                Shop.merchant_id == scope.merchant_id,
-                Shop.deleted_at.is_(None),
+                Brand.merchant_id == scope.merchant_id,
+                Brand.deleted_at.is_(None),
                 Bot.deleted_at.is_(None),
                 ChannelConnection.deleted_at.is_(None),
                 ChannelConnection.status == ChannelConnectionStatus.ACTIVE,

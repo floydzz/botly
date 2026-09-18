@@ -14,7 +14,7 @@ from app.models.bot import Bot
 from app.models.channel_connection import ChannelConnection
 from app.models.inbound_event import InboundEvent
 from app.models.merchant import Merchant
-from app.models.shop import Shop
+from app.models.brand import Brand
 
 pytestmark = pytest.mark.integration
 
@@ -25,10 +25,10 @@ async def _connection(db_session) -> ChannelConnection:
     merchant = Merchant(name="Kedai Ahmad")
     db_session.add(merchant)
     await db_session.flush()
-    shop = Shop(merchant_id=merchant.id, name="Ahmad Store", platform="standalone")
-    db_session.add(shop)
+    brand = Brand(merchant_id=merchant.id, name="Ahmad Store", platform="standalone")
+    db_session.add(brand)
     await db_session.flush()
-    bot = Bot(shop_id=shop.id, name="Ahmad Bot")
+    bot = Bot(brand_id=brand.id, name="Ahmad Bot")
     db_session.add(bot)
     await db_session.flush()
     conn = ChannelConnection(bot_id=bot.id, provider="telegram", external_ref="@ahmad_bot")

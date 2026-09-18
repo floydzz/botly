@@ -45,7 +45,7 @@ class Conversation(TimestampMixin, SQLModel, table=True):
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
-    # Denormalised from bot -> shop -> merchant so that a tenant filter is one
+    # Denormalised from bot -> brand -> merchant so that a tenant filter is one
     # indexed predicate instead of three joins. The spec makes the same trade
     # for kb_chunk, for the same reason: a forgotten join is a cross-tenant
     # leak that raises nothing and simply returns extra rows.

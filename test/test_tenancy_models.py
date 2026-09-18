@@ -4,7 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core import crypto
-from app.models import Bot, ChannelConnection, ChannelConnectionStatus, Merchant, Shop
+from app.models import Bot, ChannelConnection, ChannelConnectionStatus, Merchant, Brand
 
 pytestmark = pytest.mark.integration
 
@@ -21,16 +21,16 @@ async def _hierarchy(db_session) -> ChannelConnection:
     db_session.add(merchant)
     await db_session.flush()
 
-    shop = Shop(
+    brand = Brand(
         merchant_id=merchant.id,
         name="Kopi Co Official",
         platform="shopee",
-        external_shop_id="112233",
+        external_brand_id="112233",
     )
-    db_session.add(shop)
+    db_session.add(brand)
     await db_session.flush()
 
-    bot = Bot(shop_id=shop.id, name="Kopi Bot", persona="Friendly barista")
+    bot = Bot(brand_id=brand.id, name="Kopi Bot", persona="Friendly barista")
     db_session.add(bot)
     await db_session.flush()
 

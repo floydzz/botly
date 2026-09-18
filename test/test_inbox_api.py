@@ -13,7 +13,7 @@ from app.models.channel_connection import ChannelConnection
 from app.models.conversation import Conversation, HandoffState
 from app.models.merchant import Merchant
 from app.models.message import Direction, Message, SenderType
-from app.models.shop import Shop
+from app.models.brand import Brand
 from app.models.user import User
 
 pytestmark = pytest.mark.integration
@@ -23,10 +23,10 @@ async def _graph(db, suffix: str):
     merchant = Merchant(name=f"Inbox merchant {suffix}")
     db.add(merchant)
     await db.flush()
-    shop = Shop(merchant_id=merchant.id, name="Store", platform="standalone")
-    db.add(shop)
+    brand = Brand(merchant_id=merchant.id, name="Store", platform="standalone")
+    db.add(brand)
     await db.flush()
-    bot = Bot(shop_id=shop.id, name="Order assistant")
+    bot = Bot(brand_id=brand.id, name="Order assistant")
     db.add(bot)
     await db.flush()
     connection = ChannelConnection(

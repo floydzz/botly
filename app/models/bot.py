@@ -1,8 +1,9 @@
-from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
-from app.models.base import SoftDeleteMixin, TimestampMixin
+from app.models.base import EnumString, SoftDeleteMixin, TimestampMixin
+from app.models.orchestration import ToolWriteMode
 
 
 class Bot(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
@@ -15,10 +16,10 @@ class Bot(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
         default=None,
         sa_column=Column(BigInteger, primary_key=True, autoincrement=True),
     )
-    shop_id: int = Field(
+    brand_id: int = Field(
         sa_column=Column(
             BigInteger,
-            ForeignKey("shops.id", ondelete="CASCADE"),
+            ForeignKey("brands.id", ondelete="CASCADE"),
             nullable=False,
             index=True,
         )
@@ -36,6 +37,18 @@ class Bot(TimestampMixin, SoftDeleteMixin, SQLModel, table=True):
     enabled_tools: list[str] = Field(
         default_factory=list,
         sa_column=Column(JSONB, nullable=False, server_default="[]"),
+    )
+    tool_write_mode: ToolWriteMode = Field(
+        default=ToolWriteMode.CONFIRM_CUSTOMER,
+        sa_column=Column(
+            EnumString(ToolWriteMode, 32),
+            nullable=False,
+            server_default=ToolWriteMode.CONFIRM_CUSTOMER.value,
+        ),
+    )
+    auditor_enabled: bool = Field(
+        default=False,
+        sa_column=Column(Boolean, nullable=False, server_default="false"),
     )
     # How many replies the bot may make to an unresolved question before the
     # conversation goes to a person. Per bot because a bot answering delivery

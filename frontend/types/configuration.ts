@@ -1,11 +1,16 @@
 export interface BotConfig {
   id: number
-  shop_id: number
+  brand_id: number
   name: string
   persona: string
   llm_model_id: number | null
   escalation_max_bot_turns: number
+  tool_write_mode: 'confirm_customer' | 'auto_execute'
+  auditor_enabled: boolean
 }
+
+export interface BotWorker { key: string; name: string; description: string; enabled: boolean; config: Record<string, unknown> }
+export interface KnowledgeDocument { id: number; bot_id: number; filename: string; status: string; embedding_model: string; chunk_count: number; error: string | null; created_at: string }
 
 export interface ModelOption {
   id: number

@@ -44,7 +44,7 @@ async def test_bot_selection_is_tenant_scoped_and_prices_are_not_editable(db_ses
         listed = await api.get("/bots")
         assert [row["id"] for row in listed.json()] == [own[1].id]
         assert (await api.patch(f"/bots/{other[1].id}", json={"persona": "attack"})).status_code == 404
-        assert (await api.post("/bots", json={"shop_id": other[1].shop_id, "name": "attack"})).status_code == 404
+        assert (await api.post("/bots", json={"brand_id": other[1].brand_id, "name": "attack"})).status_code == 404
         assert (await api.patch(f"/bots/{own[1].id}", json={"multiplier": 0})).status_code == 422
         assert (await api.patch(f"/bots/{own[1].id}", json={"llm_model_id": own[2].id})).status_code == 200
         response = await api.patch(f"/bots/{own[1].id}", json={"persona": "Kind and concise"})
@@ -52,6 +52,28 @@ async def test_bot_selection_is_tenant_scoped_and_prices_are_not_editable(db_ses
         response = await api.patch(f"/bots/{own[1].id}", json={"llm_model_id": None})
         assert response.json()["llm_model_id"] is None
         assert (await api.patch(f"/bots/{own[1].id}", json={"persona": None})).status_code == 422
+
+
+async def test_worker_switches_and_write_policy_are_scoped_to_the_bot(db_session, configured):
+    own, other = configured
+    async with client() as api:
+        policy = await api.patch(
+            f"/bots/{own[1].id}", json={"tool_write_mode": "auto_execute"}
+        )
+        assert policy.status_code == 200
+        assert policy.json()["tool_write_mode"] == "auto_execute"
+
+        workers = await api.get(f"/bots/{own[1].id}/workers")
+        assert {worker["key"] for worker in workers.json()} == {"rag", "ocr", "voice", "tools"}
+        assert all(worker["enabled"] is False for worker in workers.json())
+
+        configured_worker = await api.put(
+            f"/bots/{own[1].id}/workers/rag",
+            json={"enabled": True, "config": {"collection": "store-faq"}},
+        )
+        assert configured_worker.status_code == 200
+        assert configured_worker.json() == {"key": "rag", "enabled": True, "config": {"collection": "store-faq"}}
+        assert (await api.get(f"/bots/{other[1].id}/workers")).status_code == 404
 
 
 async def test_wallet_and_history_hide_other_merchants_and_provider_cost(db_session, configured):
