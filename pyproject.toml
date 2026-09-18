@@ -1,3 +1,38 @@
+[project]
+name = "botly"
+version = "0.1.0"
+description = "Multi-channel chatbot platform for Southeast Asian commerce sellers"
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlmodel",
+    "sqlalchemy[asyncio]",
+    "asyncpg",
+    "alembic",
+    "pgvector",
+    "redis[hiredis]",
+    "celery[redis]",
+    "pydantic[email]>=2",
+    "pydantic-settings",
+    "bcrypt",
+    "cryptography",
+    "httpx",
+    "greenlet",
+    "langgraph>=1.2.11,<2.0",
+    "qdrant-client>=1.19.1,<2.0",
+    "python-multipart>=0.0.32",
+    "pypdf>=6.19.0",
+    "python-docx>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
 [tool.poetry]
 name = "botly"
 version = "0.1.0"
@@ -34,6 +69,9 @@ python-docx = "^1.2.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-asyncio = "*"
+
+[tool.uv]
+package = false
 
 [build-system]
 requires = ["poetry-core"]
