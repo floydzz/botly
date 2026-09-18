@@ -24,6 +24,11 @@ def create_app() -> FastAPI:
     app.include_router(knowledge.router)
     app.include_router(tools.router)
     app.include_router(webhooks.router)
+
+    @app.get("/")
+    async def root() -> dict[str, str]:
+        return {"status": "ok", "environment": settings.ENVIRONMENT}
+
     return app
 
 
